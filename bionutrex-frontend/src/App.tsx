@@ -6,7 +6,7 @@ import { Toaster } from "@/components/ui/sonner";
 
 // Components
 import { Navbar } from "@/components/shared/Navbar";
-/* import { Footer } from "@/components/shared/Footer"; */
+import { Footer } from "@/components/shared/Footer";
 
 function App() {
   return (
@@ -27,7 +27,7 @@ function App() {
             <Route path="/admin/blog" element={<BlogManagerPage />} /> */}
           </Routes>
         </main>
-        {/* <Footer /> */}
+        <Footer />
         <Toaster position="top-right" />
       </div>
     </Router>

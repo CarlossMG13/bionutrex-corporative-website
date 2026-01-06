@@ -1,20 +1,19 @@
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Leaf, Menu } from "lucide-react";
+import { Menu } from "lucide-react";
 import { useState } from "react";
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
-    <nav className="bg-white shadow-sm sticky top-0 z-50">
+    <nav className="bg-white md:mx-10 lg:mx-30 xl:mx-40 rounded-full shadow-sm sticky top-5 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between h-16">
+        <div className="raleway font-semibold flex justify-between h-13">
           {/* Logo */}
           <div className="flex items-center">
             <Link to="/" className="flex items-center space-x-2">
-              <Leaf className="h-8 w-8 text-primary-600" />
-              <span className="text-2xl font-bold text-gray-900">
+              <span className="raleway text-2xl font-bold text-gray-900">
                 BIONUTREX
               </span>
             </Link>
@@ -46,7 +45,9 @@ export default function Navbar() {
             >
               Contacto
             </Link>
-            <Button>Tienda</Button>
+            <Button className="raleway font-semibold cursor-pointer">
+              Soy colaborador
+            </Button>
           </div>
 
           {/* Mobile menu button */}
@@ -63,7 +64,7 @@ export default function Navbar() {
 
       {/* Mobile Navigation */}
       {isOpen && (
-        <div className="md:hidden bg-white border-t">
+        <div className="raleway md:hidden bg-white border-t">
           <div className="px-2 pt-2 pb-3 space-y-1">
             <Link
               to="/"
