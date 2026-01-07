@@ -1,103 +1,107 @@
+import * as React from "react";
+import {
+  NavigationMenu,
+  NavigationMenuContent,
+  NavigationMenuIndicator,
+  NavigationMenuItem,
+  NavigationMenuLink,
+  NavigationMenuList,
+  NavigationMenuTrigger,
+  NavigationMenuViewport,
+} from "@/components/ui/navigation-menu";
 import { Link } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { Menu } from "lucide-react";
-import { useState } from "react";
+
+const products: { title: string; href: string; description: string }[] = [
+  {
+    title: "Proteína",
+    href: "",
+    description:
+      "A modal dialog that interrupts the user with important content and expects a response.",
+  },
+  {
+    title: "Creatina",
+    href: "",
+    description:
+      "For sighted users to preview content available behind a link.",
+  },
+  {
+    title: "Fat-Burner",
+    href: "",
+    description:
+      "Displays an indicator showing the completion progress of a task, typically displayed as a progress bar.",
+  },
+  {
+    title: "Aminoácido",
+    href: "",
+    description: "Visually or semantically separates content.",
+  },
+  {
+    title: "Vitamina",
+    href: "",
+    description:
+      "A set of layered sections of content—known as tab panels—that are displayed one at a time.",
+  },
+  {
+    title: "Mineral",
+    href: "",
+    description:
+      "A popup that displays information related to an element when the element receives keyboard focus or the mouse hovers over it.",
+  },
+];
 
 export default function Navbar() {
-  const [isOpen, setIsOpen] = useState(false);
-
   return (
-    <nav className="bg-white md:mx-10 lg:mx-30 xl:mx-40 rounded-full shadow-sm sticky top-5 z-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="raleway font-semibold flex justify-between h-13">
-          {/* Logo */}
-          <div className="flex items-center">
-            <Link to="/" className="flex items-center space-x-2">
-              <span className="raleway text-2xl font-bold text-gray-900">
-                BIONUTREX
-              </span>
-            </Link>
-          </div>
-
-          {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center space-x-8">
-            <Link
-              to="/"
-              className="text-gray-700 hover:text-primary-600 transition"
-            >
-              Inicio
-            </Link>
-            <Link
-              to="/productos"
-              className="text-gray-700 hover:text-primary-600 transition"
-            >
-              Productos
-            </Link>
-            <Link
-              to="/blog"
-              className="text-gray-700 hover:text-primary-600 transition"
-            >
-              Blog
-            </Link>
-            <Link
-              to="/contacto"
-              className="text-gray-700 hover:text-primary-600 transition"
-            >
-              Contacto
-            </Link>
-            <Button className="raleway font-semibold cursor-pointer">
-              Soy colaborador
-            </Button>
-          </div>
-
-          {/* Mobile menu button */}
-          <div className="md:hidden flex items-center">
-            <button
-              onClick={() => setIsOpen(!isOpen)}
-              className="text-gray-700 hover:text-primary-600"
-            >
-              <Menu className="h-6 w-6" />
-            </button>
-          </div>
+    <nav className="raleway w-full bg-white shadow-sm">
+      <div className="container mx-auto max-w-7xl px-4 py-3 flex items-center justify-between">
+        <div className="logo">
+          <Link to={"/"} className="text-3xl font-bold">
+            BIONUTREX
+          </Link>
         </div>
+        <NavigationMenu>
+          <NavigationMenuList>
+            <NavigationMenuItem>
+              <NavigationMenuTrigger className="cursor-pointer ">
+                Item One
+              </NavigationMenuTrigger>
+              <NavigationMenuContent>
+                <ul className="grid gap-2 sm:w-[400px] md:w-[500px] md:grid-cols-2 lg:w-[600px]">
+                  {products.map((component) => (
+                    <ListItem
+                      key={component.title}
+                      title={component.title}
+                      href={component.href}
+                    >
+                      {component.description}
+                    </ListItem>
+                  ))}
+                </ul>
+              </NavigationMenuContent>
+            </NavigationMenuItem>
+          </NavigationMenuList>
+        </NavigationMenu>
       </div>
-
-      {/* Mobile Navigation */}
-      {isOpen && (
-        <div className="raleway md:hidden bg-white border-t">
-          <div className="px-2 pt-2 pb-3 space-y-1">
-            <Link
-              to="/"
-              className="block px-3 py-2 text-gray-700 hover:bg-gray-50 rounded-md"
-              onClick={() => setIsOpen(false)}
-            >
-              Inicio
-            </Link>
-            <Link
-              to="/productos"
-              className="block px-3 py-2 text-gray-700 hover:bg-gray-50 rounded-md"
-              onClick={() => setIsOpen(false)}
-            >
-              Productos
-            </Link>
-            <Link
-              to="/blog"
-              className="block px-3 py-2 text-gray-700 hover:bg-gray-50 rounded-md"
-              onClick={() => setIsOpen(false)}
-            >
-              Blog
-            </Link>
-            <Link
-              to="/contacto"
-              className="block px-3 py-2 text-gray-700 hover:bg-gray-50 rounded-md"
-              onClick={() => setIsOpen(false)}
-            >
-              Contacto
-            </Link>
-          </div>
-        </div>
-      )}
     </nav>
+  );
+}
+
+function ListItem({
+  title,
+  children,
+  href,
+  ...props
+}: React.ComponentPropsWithoutRef<"li"> & { href: string }) {
+  return (
+    <li {...props}>
+      <NavigationMenuLink asChild>
+        <Link href={href}>
+          <div className="text-sm leading-none font-medium">{title}</div>
+          <p className="text-muted-foreground line-clamp-2 text-sm leading-snug">
+            {children}
+          </p>
+        </Link>
+      </NavigationMenuLink>
+    </li>
   );
 }
 
