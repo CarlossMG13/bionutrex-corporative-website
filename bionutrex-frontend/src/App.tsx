@@ -1,5 +1,6 @@
 import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 import { Toaster } from "@/components/ui/sonner";
+import { useLenis } from "./hooks/useLenis";
 
 // Pages
 import Home from "@/pages/Home";
@@ -10,6 +11,7 @@ import { Navbar } from "@/components/shared/Navbar";
 import { Footer } from "@/components/shared/Footer";
 
 function App() {
+  useLenis(); // Smooth scroll
   return (
     <Router>
       <div className="min-h-screen bg-[#EEEEEE] flex flex-col">
