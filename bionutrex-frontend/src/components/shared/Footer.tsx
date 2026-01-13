@@ -1,44 +1,65 @@
 import { Link } from "react-router-dom";
-import footerVideo from "@/assets/videos/footer-video.webm";
+import { Mail, Speech, Facebook, MapPin, PhoneIncoming } from "lucide-react";
 
 export default function Footer() {
   return (
-    <footer className="raleway bg-[#1e1e1e] text-white px-5 pt-10">
-      <div className="top-section gap-10 flex flex-col | lg:flex-row lg:pb-10 lg:justify-around">
-        <div className="video min-h-50 w-full lg:max-w-160 overflow-hidden">
-          <video
-            autoPlay
-            loop
-            muted
-            playsInline
-            className="w-full h-full object-cover"
-          >
-            <source src={footerVideo} type="video/mp4" />
-            Tu navegador no soporta el video.
-          </video>
+    <footer className="raleway bg-[#0d40a5] text-white px-5 py-10 ">
+      <div className="top-section flex flex-col space-y-10 lg:flex-row lg:justify-around [&>div]:lg:w-1/4 [&>div]:lg:px-3 lg:px-30">
+        <div>
+          <h3 className="playfair text-2xl pb-5">BIONUTREX</h3>
+          <span className="raleway text-xs text-[#f6f6f88f]">
+            Pioneros en la próxima generación de salud natural a través de
+            ensayos clínicos rigurosos y fabricación ética.
+          </span>
+          <div className="icons pt-5 flex items-center gap-3">
+            <Link to="/">
+              <Facebook size={20} strokeWidth={2} />
+            </Link>
+            <Link to="/">
+              <Mail size={20} strokeWidth={2} />
+            </Link>
+            <Link to="/">
+              <Speech size={20} strokeWidth={2} />
+            </Link>
+          </div>
         </div>
-        <div className="links font-bold flex flex-col gap-15 pb-10 | lg:flex-row">
-          <div>
-            <span className="text-md text-xl text-[#0062D3]">MENÚ</span>
-            <nav className="text-2xl text-[#c5c5c5] pt-5 space-y-3 flex flex-col [&>a]:hover:text-white transition-all duration-300 | md:text-4xl | lg:text-2xl">
-              <Link to="/">INICIO</Link>
-              <Link to="/about">NOSOTROS</Link>
-              <Link to="/products">PRODUCTOS</Link>
-              <Link to="/blog">BLOG</Link>
-              <Link to="/">SOY COLABORADOR</Link>
-            </nav>
-          </div>
-          <div>
-            <span className="text-md text-xl text-[#0062D3]">CONTACTO</span>
-            <nav className="text-2xl text-[#c5c5c5] pt-5 space-y-3 flex flex-col [&>a]:hover:text-white transition-all duration-300 | md:text-4xl | lg:text-2xl">
-              <Link to="/">+52 55 5555 5555</Link>
-              <Link to="/about">INFO@BIONUTREX.COM</Link>
-              <span>12/a, new bustin tower NYC, US</span>
-            </nav>
-          </div>
+        <div>
+          <span className="raleway font-bold text-md">Menú</span>
+          <ul className="flex flex-col space-y-2 pt-3 font-medium text-sm text-[#f6f6f88f] [&>a]:hover:text-white transition-colors duration-300">
+            <Link to="/">Productos</Link>
+            <Link to="/">Nosotros</Link>
+            <Link to="/">Catálogo</Link>
+            <Link to="/">Recursos</Link>
+            <Link to="/">Blog</Link>
+            <Link to="/">Contacto</Link>
+          </ul>
+        </div>
+        <div>
+          <span className="raleway font-bold text-md">Compañía</span>
+          <ul className="flex flex-col space-y-2 pt-3 font-medium text-sm text-[#f6f6f88f] [&>a]:hover:text-white transition-colors duration-300">
+            <Link to="/">Misión</Link>
+            <Link to="/">Insfraestructura</Link>
+            <Link to="/">Compromiso</Link>
+            <Link to="/">Soy Colaborador</Link>
+          </ul>
+        </div>
+        <div>
+          <span className="raleway font-bold text-md">Contacto</span>
+          <ul className="flex flex-col space-y-2 pt-3 pb-10 font-medium text-sm text-[#f6f6f88f]">
+            <div className="flex gap-2 items-start">
+              <MapPin size={20} />
+              <span>
+                Alacio Pérez 793, Salvador Díaz Mirón, 91700 Veracruz, Ver.
+              </span>
+            </div>
+            <div className="flex gap-2 items-start">
+              <PhoneIncoming size={20} />
+              <span>+52 222 222 2222</span>
+            </div>
+          </ul>
         </div>
       </div>
-      <div className="bottom-section text-center border-t border-[#333] p-10 transition-all duration-300">
+      <div className="bottom-section text-center border-t border-[#f6f6f88f] pt-10 transition-all duration-300">
         <span className="text-xs">Powered by Bionutrex - 2026</span>
         <h1 className="text-4xl mt-2 font-bold | sm:text-7xl | md:text-8xl | lg:text-9xl">
           BIONUTREX

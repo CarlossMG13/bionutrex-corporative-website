@@ -3,7 +3,7 @@ import { Toaster } from "@/components/ui/sonner";
 
 // Pages
 import Home from "@/pages/Home";
-import About from "@/pages/About";
+/* import About from "@/pages/About"; */
 
 // Components
 import { Navbar } from "@/components/shared/Navbar";
@@ -18,7 +18,7 @@ function App() {
           <Routes>
             {/* Rutas publicas */}
             <Route path="/" element={<Home />} />
-            <Route path="/about" element={<About />} />
+            {/* <Route path="/about" element={<About />} /> */}
             {/* <Route path="/blog/:slug" element={<BlogPostPage />} /> */}
 
             {/* Rutas privadas */}
