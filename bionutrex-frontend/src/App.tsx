@@ -1,38 +1,48 @@
-import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
+import {
+  BrowserRouter as Router,
+  Route,
+  Routes,
+  useLocation,
+} from "react-router-dom";
 import { Toaster } from "@/components/ui/sonner";
 import { useLenis } from "./hooks/useLenis";
 
 // Pages
 import Home from "@/pages/Home";
+import Login from "@/pages/admin/Login";
 /* import About from "@/pages/About"; */
 
 // Components
 import { Navbar } from "@/components/shared/Navbar";
 import { Footer } from "@/components/shared/Footer";
 
+function AppContent() {
+  const location = useLocation();
+  const isAdminRoute = location.pathname.startsWith("/admin");
+
+  return (
+    <div className="min-h-screen bg-[#EEEEEE] flex flex-col">
+      {!isAdminRoute && <Navbar />}
+      <main className="grow">
+        <Routes>
+          {/* Rutas publicas */}
+          <Route path="/" element={<Home />} />
+
+          {/* Rutas privadas */}
+          <Route path="/admin/login" element={<Login />} />
+        </Routes>
+      </main>
+      {!isAdminRoute && <Footer />}
+      <Toaster position="top-right" />
+    </div>
+  );
+}
+
 function App() {
   useLenis(); // Smooth scroll
   return (
     <Router>
-      <div className="min-h-screen bg-[#EEEEEE] flex flex-col">
-        <Navbar />
-        <main className="grow">
-          <Routes>
-            {/* Rutas publicas */}
-            <Route path="/" element={<Home />} />
-            {/* <Route path="/about" element={<About />} /> */}
-            {/* <Route path="/blog/:slug" element={<BlogPostPage />} /> */}
-
-            {/* Rutas privadas */}
-            {/* <Route path="/admin/login" element={<Login />} />
-            <Route path="/admin" element={<Dashboard />} />
-            <Route path="/admin/home" element={<HomeEditor />} />
-            <Route path="/admin/blog" element={<BlogManagerPage />} /> */}
-          </Routes>
-        </main>
-        <Footer />
-        <Toaster position="top-right" />
-      </div>
+      <AppContent />
     </Router>
   );
 }

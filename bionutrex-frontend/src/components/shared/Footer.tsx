@@ -40,7 +40,7 @@ export default function Footer() {
             <Link to="/">Misión</Link>
             <Link to="/">Insfraestructura</Link>
             <Link to="/">Compromiso</Link>
-            <Link to="/">Soy Colaborador</Link>
+            <Link to="/admin/login">Soy Colaborador</Link>
           </ul>
         </div>
         <div>
