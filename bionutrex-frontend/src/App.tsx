@@ -10,11 +10,14 @@ import { useLenis } from "./hooks/useLenis";
 // Pages
 import Home from "@/pages/Home";
 import Login from "@/pages/admin/Login";
+/* import Dashboard from "@/pages/admin/Dashboard";
+import HomeEditor from "@/pages/admin/HomeEditor"; */
 /* import About from "@/pages/About"; */
 
 // Components
 import { Navbar } from "@/components/shared/Navbar";
 import { Footer } from "@/components/shared/Footer";
+import AdminLayout from "./components/admin/AdminLayout";
 
 function AppContent() {
   const location = useLocation();
@@ -28,8 +31,19 @@ function AppContent() {
           {/* Rutas publicas */}
           <Route path="/" element={<Home />} />
 
-          {/* Rutas privadas */}
+          {/* Ruta de Login (sin layout de admin) */}
           <Route path="/admin/login" element={<Login />} />
+
+          {/* Rutas del panel de admin (con AdminLayout) */}
+          <Route path="/admin" element={<AdminLayout />}>
+            {/* <Route path="dashboard" element={<Dashboard />} />
+            <Route path="home" element={<HomeEditor />} /> */}
+            {/* Agregar más rutas aquí conforme las necesites */}
+            {/* <Route path="products" element={<ProductCatalog />} /> */}
+            {/* <Route path="clinical" element={<ClinicalData />} /> */}
+            {/* <Route path="media" element={<MediaLibrary />} /> */}
+            {/* <Route path="users" element={<UserManagement />} /> */}
+          </Route>
         </Routes>
       </main>
       {!isAdminRoute && <Footer />}
@@ -39,7 +53,7 @@ function AppContent() {
 }
 
 function App() {
-  useLenis(); // Smooth scroll
+  useLenis();
   return (
     <Router>
       <AppContent />
