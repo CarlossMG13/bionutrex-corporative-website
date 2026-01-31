@@ -83,7 +83,7 @@ export const blogPostAPI = {
   getBySlug: (slug: string) => api.get<BlogPost>(`/blog-posts/slug/${slug}`),
 
   create: (formData: FormData) =>
-    api.post<BlogPost>("/blog", formData, {
+    api.post<BlogPost>("/blog-posts", formData, {
       headers: { "Content-Type": "multipart/form-data" },
     }),
 

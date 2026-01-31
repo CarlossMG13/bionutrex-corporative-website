@@ -17,7 +17,7 @@ import HomeEditor from "@/pages/admin/HomeEditor"; */
 // Components
 import { Navbar } from "@/components/shared/Navbar";
 import { Footer } from "@/components/shared/Footer";
-import AdminLayout from "./components/admin/AdminLayout";
+import AdminLayout from "@/components/Admin/AdminLayout";
 
 function AppContent() {
   const location = useLocation();
