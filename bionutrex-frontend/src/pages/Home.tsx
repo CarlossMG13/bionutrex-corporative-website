@@ -1,4 +1,4 @@
-import { useHomeSections } from "@/hooks/useHomeSections";
+import { useHomeSections } from "@/contexts/HomeDataContext";
 
 /* Components */
 import HeroSection from "@/components/home/HeroSection";
@@ -7,7 +7,7 @@ import MethodologySection from "@/components/home/MethodologySection";
 import BlogSection from "@/components/home/BlogSection";
 
 export default function Home() {
-  const { loading, error } = useHomeSections();
+  const { loading, error, getSortedSections } = useHomeSections();
 
   if (loading) {
     return (
@@ -36,16 +36,30 @@ export default function Home() {
     );
   }
 
+  // Obtener secciones ordenadas por order ascendente y alfabéticamente
+  const sortedSections = getSortedSections();
+  
+  // Mapeo de sectionKey a componentes
+  const sectionComponents = {
+    hero: HeroSection,
+    quality: QualitySection,
+    methodology: MethodologySection,
+    blog: BlogSection,
+  };
+
   return (
     <div className="home-page">
-      {/* Hero section */}
-      <HeroSection />
-      {/* Quality Section */}
-      <QualitySection />
-      {/* Methodology Section */}
-      <MethodologySection />
-      {/* Blog section */}
-      <BlogSection />
+      {/* Renderizar secciones según su orden */}
+      {sortedSections.map((section) => {
+        const SectionComponent = sectionComponents[section.sectionKey as keyof typeof sectionComponents];
+        
+        // Solo renderizar si existe el componente para esa sectionKey
+        if (SectionComponent) {
+          return <SectionComponent key={section.id} />;
+        }
+        
+        return null;
+      })}
     </div>
   );
 }

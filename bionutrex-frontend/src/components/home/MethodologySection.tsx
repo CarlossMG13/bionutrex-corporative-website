@@ -1,4 +1,4 @@
-import { useHomeSections } from "@/hooks/useHomeSections";
+import { useHomeSections } from "@/contexts/HomeDataContext";
 
 export default function MethodologySection() {
   const { getSectionByKey } = useHomeSections();

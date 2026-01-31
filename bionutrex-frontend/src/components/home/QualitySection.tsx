@@ -1,5 +1,5 @@
 import { ShieldCheck, ShieldPlus, GlobeLock, CircleStar } from "lucide-react";
-import { useHomeSections } from "@/hooks/useHomeSections";
+import { useHomeSections } from "@/contexts/HomeDataContext";
 
 export default function QualitySection() {
   const { getSectionByKey } = useHomeSections();

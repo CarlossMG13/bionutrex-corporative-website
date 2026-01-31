@@ -3,7 +3,7 @@ import SecondImageGrid from "@/assets/images/img2-grid-product.jpg";
 import ThirdImageGrid from "@/assets/images/img3-grid-product.jpg";
 import { Link } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
-import { useHomeSections } from "@/hooks/useHomeSections";
+import { useHomeSections } from "@/contexts/HomeDataContext";
 
 export default function BlogSection() {
   const { getSectionByKey } = useHomeSections();

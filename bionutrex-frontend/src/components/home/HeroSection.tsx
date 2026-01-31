@@ -1,6 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { useHomeSections } from "@/hooks/useHomeSections";
+import { useHomeSections } from "@/contexts/HomeDataContext";
 import HeroSectionImg from "../../assets/images/heroSection-img.jpg";
 
 export default function HeroSection() {

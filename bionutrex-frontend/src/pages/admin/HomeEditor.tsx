@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import {
-  Save,
   Eye,
   Upload,
   Plus,
@@ -19,13 +18,20 @@ import { SectionEditModal } from "@/components/Admin/SectionEditModal";
 import Home from "@/pages/Home";
 
 export default function HomeEditor() {
-  const { isPreviewMode } = useAdmin();
+  const { 
+    isPreviewMode, 
+    addPendingChange, 
+    pendingChanges, 
+    hasUnsavedChanges 
+  } = useAdmin();
   
   // Usar el contexto de manera segura
   let triggerRefresh: (() => void) | null = null;
+  let applyPendingChanges: ((changes: any[]) => void) | null = null;
   try {
     const context = useHomeDataRefresh();
     triggerRefresh = context.triggerRefresh;
+    applyPendingChanges = context.applyPendingChanges;
   } catch (err) {
     console.warn('useHomeDataRefresh context not available in HomeEditor');
   }
@@ -35,10 +41,58 @@ export default function HomeEditor() {
   const [activeTab, setActiveTab] = useState<"sections" | "slider">("sections");
   const [editingSection, setEditingSection] = useState<HomeSection | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [hasChanges, setHasChanges] = useState(false);
   const [dataLoading, setDataLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [apiConnected, setApiConnected] = useState(false);
+  const [availableImages, setAvailableImages] = useState<{src: string, name: string, type: 'local' | 'upload'}[]>([]);
+  const [showImageGallery, setShowImageGallery] = useState(false);
+  const [sectionToDelete, setSectionToDelete] = useState<HomeSection | null>(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [uploading, setUploading] = useState(false);
+
+  // Función para cargar imágenes disponibles
+  const loadAvailableImages = async () => {
+    const images: {src: string, name: string, type: 'local' | 'upload'}[] = [];
+    
+    // Cargar imágenes locales desde public/images (accesibles directamente)
+    const localImages = [
+      'heroSection-img.jpg',
+      'MethImage.jpg',
+      'img1-grid-product.jpg',
+      'img2-grid-product.jpg',
+      'img3-grid-product.jpg'
+    ];
+    
+    // Usar rutas de public que funcionen en Vite
+    localImages.forEach(img => {
+      images.push({
+        src: `/images/${img}`,
+        name: img,
+        type: 'local'
+      });
+    });
+    
+    // Intentar cargar imágenes del backend uploads
+    try {
+      const response = await fetch('http://localhost:3001/api/uploads/list');
+      if (response.ok) {
+        const uploadedFiles = await response.json();
+        uploadedFiles.forEach((file: string) => {
+          if (file.match(/\.(jpg|jpeg|png|gif|webp)$/i)) {
+            images.push({
+              src: `http://localhost:3001/uploads/${file}`,
+              name: file,
+              type: 'upload'
+            });
+          }
+        });
+      }
+    } catch (err) {
+      console.warn('No se pudieron cargar imágenes del servidor:', err);
+    }
+    
+    setAvailableImages(images);
+  };
 
   // Cargar datos desde la API
   useEffect(() => {
@@ -128,7 +182,7 @@ export default function HomeEditor() {
 
         // Probar conectividad con endpoints de admin primero
         let isApiAvailable = false;
-        let adminSections = [];
+        let adminSections: HomeSection[] = [];
         
         try {
           const adminResponse = await homeSectionAPI.getAllAdmin();
@@ -164,7 +218,7 @@ export default function HomeEditor() {
             setSliders([]);
           }
           
-          setError("✅ Datos reales cargados desde la base de datos");
+          setError("Datos cargados correctamente.");
           setTimeout(() => setError(null), 3000);
           
         } else if (isApiAvailable && adminSections.length === 0) {
@@ -222,7 +276,15 @@ export default function HomeEditor() {
     };
 
     loadData();
+    loadAvailableImages();
   }, []); // Sin dependencias para evitar loops
+
+  // Aplicar cambios pendientes al contexto global en tiempo real
+  useEffect(() => {
+    if (applyPendingChanges && pendingChanges.length > 0) {
+      applyPendingChanges(pendingChanges);
+    }
+  }, [pendingChanges, applyPendingChanges]);
 
   // Si estamos en modo preview, mostramos la página Home real
   if (isPreviewMode) {
@@ -344,50 +406,28 @@ export default function HomeEditor() {
 
   const handleSectionSave = async (updatedSection: HomeSection) => {
     try {
-      // Solo intentar guardar en API si está conectada
-      if (apiConnected) {
-        const formData = new FormData();
-        formData.append('title', updatedSection.title);
-        formData.append('content', updatedSection.content);
-        formData.append('active', updatedSection.active.toString());
-        formData.append('order', updatedSection.order.toString());
-        
-        if (updatedSection.subtitle) {
-          formData.append('subtitle', updatedSection.subtitle);
-        }
-        if (updatedSection.buttonText) {
-          formData.append('buttonText', updatedSection.buttonText);
-        }
-        if (updatedSection.buttonLink) {
-          formData.append('buttonLink', updatedSection.buttonLink);
-        }
-        
-        try {
-          await homeSectionAPI.update(updatedSection.id, formData);
-        } catch (updateError) {
-          console.warn("Update failed, possibly authentication issue:", updateError);
-          // Continuar con actualización local
-        }
-      }
+      // Agregar el cambio a la cola de cambios pendientes
+      addPendingChange({
+        id: updatedSection.id,
+        type: 'section',
+        action: 'update',
+        data: updatedSection
+      });
       
-      // Actualizar estado local
+      // Actualizar estado local inmediatamente para feedback visual
       setSections(sections.map(s => 
         s.id === updatedSection.id ? updatedSection : s
       ));
       
       setEditingSection(null);
       setIsModalOpen(false);
-      setHasChanges(false);
       
       // Disparar actualización de la página Home
       if (triggerRefresh) {
         triggerRefresh();
       }
       
-      const message = apiConnected 
-        ? "✅ Sección actualizada exitosamente" 
-        : "✅ Cambios guardados localmente";
-      setError(message);
+      setError("✅ Cambios agregados a cola de publicación");
       setTimeout(() => setError(null), 3000);
     } catch (err) {
       console.error("Error saving section:", err);
@@ -408,35 +448,15 @@ export default function HomeEditor() {
 
       const updatedSection = { ...section, active: !section.active };
 
-      // Solo intentar actualizar en API si está conectada
-      if (apiConnected) {
-        try {
-          const formData = new FormData();
-          formData.append('title', section.title);
-          formData.append('content', section.content);
-          formData.append('active', updatedSection.active.toString());
-          formData.append('order', section.order.toString());
-          
-          if (section.subtitle) {
-            formData.append('subtitle', section.subtitle);
-          }
-          if (section.buttonText) {
-            formData.append('buttonText', section.buttonText);
-          }
-          if (section.buttonLink) {
-            formData.append('buttonLink', section.buttonLink);
-          }
-
-          await homeSectionAPI.update(id, formData);
-          console.log("✅ Visibilidad actualizada en la API");
-        } catch (updateError) {
-          console.warn("Update failed, continuing with local update:", updateError);
-          setError("⚠️ Cambio guardado localmente - problemas de conexión");
-          setTimeout(() => setError(null), 3000);
-        }
-      }
+      // Agregar el cambio a la cola de cambios pendientes
+      addPendingChange({
+        id: updatedSection.id,
+        type: 'section',
+        action: 'visibility',
+        data: updatedSection
+      });
       
-      // Actualizar estado local SIEMPRE
+      // Actualizar estado local SIEMPRE para feedback visual inmediato
       setSections(sections.map(s => 
         s.id === id ? updatedSection : s
       ));
@@ -447,11 +467,8 @@ export default function HomeEditor() {
         triggerRefresh();
       }
       
-      // Solo mostrar mensaje de éxito si no hubo errores
-      if (apiConnected) {
-        setError("✅ Visibilidad actualizada exitosamente");
-        setTimeout(() => setError(null), 3000);
-      }
+      setError("✅ Cambio de visibilidad agregado a cola de publicación");
+      setTimeout(() => setError(null), 3000);
       
     } catch (err) {
       console.error("Error toggling visibility:", err);
@@ -461,38 +478,106 @@ export default function HomeEditor() {
   };
 
   const handleSectionDelete = async (id: string) => {
-    if (!confirm("¿Estás seguro de que quieres eliminar esta sección?")) return;
+    const section = sections.find(s => s.id === id);
+    if (!section) return;
+    
+    setSectionToDelete(section);
+    setShowDeleteModal(true);
+  };
+
+  const confirmSectionDelete = async () => {
+    if (!sectionToDelete) return;
     
     try {
-      // Solo intentar eliminar en API si está conectada
-      if (apiConnected) {
-        await homeSectionAPI.delete(id);
-      }
+      // Agregar el cambio a la cola de cambios pendientes
+      addPendingChange({
+        id: sectionToDelete.id,
+        type: 'section',
+        action: 'delete',
+        data: sectionToDelete
+      });
       
-      // Actualizar estado local
-      setSections(sections.filter(s => s.id !== id));
-      setHasChanges(false);
+      // Actualizar estado local para feedback visual
+      setSections(sections.filter(s => s.id !== sectionToDelete.id));
       
       // Disparar actualización de la página Home
       if (triggerRefresh) {
         triggerRefresh();
       }
       
-      const message = apiConnected 
-        ? "✅ Sección eliminada exitosamente" 
-        : "✅ Sección eliminada localmente";
-      setError(message);
+      setError("✅ Sección marcada para eliminación");
       setTimeout(() => setError(null), 3000);
     } catch (err) {
       console.error("Error deleting section:", err);
       setError("❌ Error al eliminar la sección");
       setTimeout(() => setError(null), 3000);
+    } finally {
+      setShowDeleteModal(false);
+      setSectionToDelete(null);
     }
   };
 
-  const handleSaveChanges = () => {
-    // Esta función ya no es necesaria porque guardamos individualmente
-    setHasChanges(false);
+  const cancelSectionDelete = () => {
+    setShowDeleteModal(false);
+    setSectionToDelete(null);
+  };
+
+  // Función para manejar la subida de archivos
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (!files || files.length === 0) return;
+
+    const file = files[0];
+    
+    // Validar que sea una imagen
+    if (!file.type.startsWith('image/')) {
+      setError('❌ Solo se pueden subir archivos de imagen');
+      setTimeout(() => setError(null), 3000);
+      return;
+    }
+
+    // Validar tamaño (máximo 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      setError('❌ El archivo es demasiado grande (máximo 5MB)');
+      setTimeout(() => setError(null), 3000);
+      return;
+    }
+
+    try {
+      setUploading(true);
+      setError('📁 Subiendo imagen...');
+      
+      const formData = new FormData();
+      formData.append('image', file);
+
+      const response = await fetch('http://localhost:3001/api/uploads', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        console.log('Upload successful:', result);
+        
+        // Recargar las imágenes disponibles
+        await loadAvailableImages();
+        
+        setError(`✅ Imagen "${file.name}" subida correctamente`);
+        setTimeout(() => setError(null), 3000);
+        
+        // Limpiar el input
+        event.target.value = '';
+      } else {
+        const errorData = await response.json().catch(() => ({ error: 'Error desconocido' }));
+        throw new Error(errorData.error || 'Error al subir la imagen');
+      }
+    } catch (err) {
+      console.error('Error uploading file:', err);
+      setError(`❌ Error al subir la imagen: ${err instanceof Error ? err.message : 'Error desconocido'}`);
+      setTimeout(() => setError(null), 5000);
+    } finally {
+      setUploading(false);
+    }
   };
 
   return (
@@ -506,30 +591,29 @@ export default function HomeEditor() {
           </p>
           
           {/* Status indicator */}
-          <div className={`mt-3 inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium ${
-            apiConnected 
-              ? 'bg-green-100 text-green-800' 
-              : 'bg-yellow-100 text-yellow-800'
-          }`}>
-            <div className={`w-2 h-2 rounded-full ${
-              apiConnected ? 'bg-green-500' : 'bg-yellow-500'
-            }`} />
-            {apiConnected 
-              ? 'Conectado a la base de datos'
-              : 'Modo sin conexión - datos de ejemplo'
-            }
+          <div className="flex gap-3 mt-3">
+            <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium ${
+              apiConnected 
+                ? 'bg-green-100 text-green-800' 
+                : 'bg-yellow-100 text-yellow-800'
+            }`}>
+              <div className={`w-2 h-2 rounded-full ${
+                apiConnected ? 'bg-green-500' : 'bg-yellow-500'
+              }`} />
+              {apiConnected 
+                ? 'Conectado a la base de datos'
+                : 'Modo sin conexión - datos de ejemplo'
+              }
+            </div>
+            
+            {/* Indicador de cambios pendientes */}
+            {hasUnsavedChanges && (
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                <div className="w-2 h-2 rounded-full bg-blue-500" />
+                {pendingChanges.length} cambios pendientes
+              </div>
+            )}
           </div>
-        </div>
-        <div className="flex gap-3">
-          {hasChanges && (
-            <button
-              onClick={handleSaveChanges}
-              className="flex items-center gap-2 px-4 py-2 bg-[#0d40a5] text-white rounded-lg hover:bg-[#0d40a5]/90 transition-colors"
-            >
-              <Save className="w-4 h-4" />
-              Guardar Cambios
-            </button>
-          )}
         </div>
       </div>
 
@@ -566,7 +650,16 @@ export default function HomeEditor() {
         <div className="space-y-6">
           {/* Sections List */}
           <div className="grid gap-4">
-            {sections.map((section) => (
+            {sections
+              .sort((a, b) => {
+                // Ordenar por order ascendente
+                if (a.order !== b.order) {
+                  return a.order - b.order;
+                }
+                // Si tienen el mismo order, ordenar alfabéticamente por title
+                return a.title.localeCompare(b.title);
+              })
+              .map((section) => (
               <div
                 key={section.id}
                 className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm"
@@ -664,26 +757,28 @@ export default function HomeEditor() {
                       onClick={async () => {
                         if (confirm("¿Estás seguro de que quieres eliminar este slider?")) {
                           try {
-                            // Intentar eliminar en la API
-                            try {
-                              await sliderAPI.delete(slider.id);
-                            } catch (apiError) {
-                              console.warn("API delete failed, deleting locally:", apiError);
-                              setError("Slider eliminado localmente (API no disponible)");
-                            }
+                            // Agregar el cambio a la cola de cambios pendientes
+                            addPendingChange({
+                              id: slider.id,
+                              type: 'slider',
+                              action: 'delete',
+                              data: slider
+                            });
                             
-                            // Actualizar estado local
+                            // Actualizar estado local para feedback visual
                             setSliders(sliders.filter(s => s.id !== slider.id));
                             
                             // Disparar actualización de la página Home
                             if (triggerRefresh) {
                               triggerRefresh();
                             }
-                            setError("✅ Slider eliminado exitosamente");
+                            
+                            setError("✅ Slider marcado para eliminación");
                             setTimeout(() => setError(null), 3000);
                           } catch (err) {
                             console.error("Error deleting slider:", err);
-                            setError("Error al eliminar el slider");
+                            setError("❌ Error al eliminar el slider");
+                            setTimeout(() => setError(null), 3000);
                           }
                         }
                       }}
@@ -720,17 +815,117 @@ export default function HomeEditor() {
           </div>
 
           {/* Add New Image */}
-          <button 
-            onClick={() => {
-              // TODO: Implementar subida de nueva imagen
-              alert("Funcionalidad de subir nueva imagen pendiente de implementar");
-            }}
-            className="w-full border-2 border-dashed border-gray-300 rounded-lg p-8 text-gray-500 hover:border-[#0d40a5] hover:text-[#0d40a5] transition-colors"
-          >
-            <Upload className="w-8 h-8 mx-auto mb-3" />
-            <span className="block text-sm font-medium mb-1">Subir Nueva Imagen</span>
-            <span className="block text-xs text-gray-400">PNG, JPG hasta 5MB</span>
-          </button>
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Botón para subir nueva imagen */}
+              <div className="relative">
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleFileUpload}
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                  disabled={uploading}
+                />
+                <button 
+                  className={`w-full border-2 border-dashed border-gray-300 rounded-lg p-8 text-gray-500 hover:border-[#0d40a5] hover:text-[#0d40a5] transition-colors ${uploading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  disabled={uploading}
+                >
+                  <Upload className="w-8 h-8 mx-auto mb-3" />
+                  <span className="block text-sm font-medium mb-1">
+                    {uploading ? 'Subiendo...' : 'Subir Nueva Imagen'}
+                  </span>
+                  <span className="block text-xs text-gray-400">
+                    {uploading ? 'Por favor espera...' : 'Arrastra o haz clic para seleccionar (máx. 5MB)'}
+                  </span>
+                </button>
+              </div>
+
+              {/* Botón para agregar desde galería */}
+              <button 
+                onClick={() => setShowImageGallery(!showImageGallery)}
+                className="w-full border-2 border-dashed border-gray-300 rounded-lg p-8 text-gray-500 hover:border-[#0d40a5] hover:text-[#0d40a5] transition-colors"
+              >
+                <ImageIcon className="w-8 h-8 mx-auto mb-3" />
+                <span className="block text-sm font-medium mb-1">Agregar desde Galería</span>
+                <span className="block text-xs text-gray-400">Selecciona desde imágenes disponibles</span>
+              </button>
+            </div>
+            
+            {/* Galería de imágenes */}
+            {showImageGallery && (
+              <div className="bg-white border border-gray-200 rounded-lg p-4">
+                <h4 className="font-medium text-gray-900 mb-3">Imágenes Disponibles</h4>
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                  {availableImages.map((image, index) => (
+                    <div
+                      key={`${image.type}-${index}`}
+                      className="relative group cursor-pointer border border-gray-200 rounded-lg overflow-hidden hover:border-[#0d40a5] transition-colors"
+                      onClick={async () => {
+                        try {
+                          const newSlider: Slider = {
+                            id: `temp-${Date.now()}`,
+                            title: `Imagen ${sliders.length + 1}`,
+                            subtitle: `Desde ${image.type === 'local' ? 'assets' : 'uploads'}`,
+                            imageUrl: image.src,
+                            active: true,
+                            order: sliders.length + 1,
+                            createdAt: new Date().toISOString(),
+                            updatedAt: new Date().toISOString(),
+                          };
+                          
+                          // Agregar el cambio a la cola de cambios pendientes
+                          addPendingChange({
+                            id: newSlider.id,
+                            type: 'slider',
+                            action: 'create',
+                            data: newSlider
+                          });
+                          
+                          // Actualizar estado local para feedback visual
+                          setSliders([...sliders, newSlider]);
+                          
+                          // Disparar actualización de la página Home
+                          if (triggerRefresh) {
+                            triggerRefresh();
+                          }
+                          
+                          setShowImageGallery(false);
+                          setError('✅ Imagen agregada a cola de publicación');
+                          setTimeout(() => setError(null), 3000);
+                        } catch (err) {
+                          console.error('Error adding image to slider:', err);
+                          setError('❌ Error al agregar imagen al slider');
+                          setTimeout(() => setError(null), 3000);
+                        }
+                      }}
+                    >
+                      <div className="aspect-video bg-gray-100">
+                        <img
+                          src={image.src}
+                          alt={image.name}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                      <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                        <Plus className="w-6 h-6 text-white" />
+                      </div>
+                      <div className="absolute bottom-0 left-0 right-0 bg-black/70 text-white p-2">
+                        <p className="text-xs font-medium truncate">{image.name}</p>
+                        <p className="text-xs text-gray-300">
+                          {image.type === 'local' ? 'Assets' : 'Uploads'}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                {availableImages.length === 0 && (
+                  <p className="text-gray-500 text-sm text-center py-4">
+                    No hay imágenes disponibles
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
         </div>
       )}
 
@@ -762,6 +957,40 @@ export default function HomeEditor() {
           onSave={handleSectionSave}
           onClose={handleModalClose}
         />
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && sectionToDelete && (
+        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <div className="mb-4">
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                Eliminar Sección
+              </h3>
+              <p className="text-gray-600">
+                ¿Estás seguro de que quieres eliminar la sección "{sectionToDelete.title}"?
+              </p>
+              <p className="text-sm text-gray-500 mt-2">
+                Esta acción se agregará a los cambios pendientes y se aplicará cuando publiques los cambios.
+              </p>
+            </div>
+            
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={cancelSectionDelete}
+                className="px-4 py-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={confirmSectionDelete}
+                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
+              >
+                Eliminar
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
