@@ -1,21 +1,29 @@
-import * as React from "react";
 import { ShieldCheck, ShieldPlus, GlobeLock, CircleStar } from "lucide-react";
+import { useHomeSections } from "@/hooks/useHomeSections";
 
 export default function QualitySection() {
+  const { getSectionByKey } = useHomeSections();
+  
+  const qualitySection = getSectionByKey('quality');
+  
+  // Contenido dinámico o por defecto
+  const sectionTitle = qualitySection?.title || "Certificaciones Industriales";
+  const sectionContent = qualitySection?.content || "Nuestras instalaciones superan los requisitos regulatorios globales para la fabricación, prueba y distribución de extractos biológicos.";
+  const sectionSubtitle = qualitySection?.subtitle || "Estándares de Calidad";
+
   return (
     <div className="main my-20 flex flex-col max-w-300 mx-auto px-6">
       <div className="flex flex-col w-full md:flex-row md:items-center justify-between mb-12 border-b border-ice-gray pb-8">
         <div>
           <span className="raleway text-[#0d40a5] font-bold uppercase tracking-widest text-xs mb-2 block">
-            Estándares de Calidad
+            {sectionSubtitle}
           </span>
           <h2 className="playfair text-[#0d40a5] text-4xl font-serif-title">
-            Certificaciones Industriales
+            {sectionTitle}
           </h2>
         </div>
         <p className="raleway text-[#0d40a5] max-w-md mt-4 md:mt-0">
-          Nuestras instalaciones superan los requisitos regulatorios globales
-          para la fabricación, prueba y distribución de extractos biológicos.
+          {sectionContent}
         </p>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">

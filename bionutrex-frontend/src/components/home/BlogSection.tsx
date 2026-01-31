@@ -1,21 +1,33 @@
-import * as React from "react";
 import FirstImageGrid from "@/assets/images/img1-grid-product.jpg";
 import SecondImageGrid from "@/assets/images/img2-grid-product.jpg";
 import ThirdImageGrid from "@/assets/images/img3-grid-product.jpg";
 import { Link } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
+import { useHomeSections } from "@/hooks/useHomeSections";
 
 export default function BlogSection() {
+  const { getSectionByKey } = useHomeSections();
+  
+  const blogSection = getSectionByKey('blog');
+  
+  // Contenido dinámico o por defecto
+  const sectionTitle = blogSection?.title || "Líneas de Productos Core";
+  const sectionContent = blogSection?.content || "Explore nuestra gama de suplementos clínicamente validados, diseñados para profesionales de la salud e individuos conscientes de su bienestar.";
+  const sectionSubtitle = blogSection?.subtitle;
+
   return (
     <div className="py-20 flex flex-col max-w-300 mx-auto px-6">
       <div className="header-section text-start sm:text-center flex items-start sm:items-center justify-center flex-col space-y-2">
+        {sectionSubtitle && (
+          <span className="raleway text-[#0d40a5] font-bold uppercase tracking-widest text-xs mb-2 block">
+            {sectionSubtitle}
+          </span>
+        )}
         <h2 className="playfair text-[#0d40a5] text-3xl font-serif-title">
-          Líneas de Productos Core
+          {sectionTitle}
         </h2>
         <p className="raleway text-[#0d40a5] max-w-lg mt-4 md:mt-0">
-          Explore nuestra gama de suplementos clínicamente validados, diseñados
-          para profesionales de la salud e individuos conscientes de su
-          bienestar.
+          {sectionContent}
         </p>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8 py-10 raleway">

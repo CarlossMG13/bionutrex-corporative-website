@@ -45,7 +45,7 @@ export const sliderAPI = {
     }),
 
   update: (id: string, formData: FormData) =>
-    api.put<Slider>(`sliders/${id}`, formData, {
+    api.put<Slider>(`/sliders/${id}`, formData, {
       headers: { "Content-Type": "multipart/form-data" },
     }),
 

@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, ReactNode } from "react";
+import { createContext, useContext, useState, type ReactNode } from "react";
 
 // Estado de edicion
 interface EditingSection {
@@ -6,6 +6,9 @@ interface EditingSection {
   name: string;
   type: string;
 }
+
+// Tipos de dispositivos para preview
+type DeviceType = "desktop" | "tablet" | "mobile";
 
 interface AdminContexType {
   // Seccion que esta editando actualmente
@@ -15,6 +18,12 @@ interface AdminContexType {
   // Panel derecho abierto/cerrado
   isPanelOpen: boolean;
   setIsPanelOpen: (open: boolean) => void;
+
+  // Preview de dispositivos
+  previewDevice: DeviceType;
+  setPreviewDevice: (device: DeviceType) => void;
+  isPreviewMode: boolean;
+  setIsPreviewMode: (enabled: boolean) => void;
 
   // Datos temporales de edicion
   editData: Record<string, any>;
@@ -32,6 +41,8 @@ export function AdminProvider({ children }: { children: ReactNode }) {
   );
   const [isPanelOpen, setIsPanelOpen] = useState(false);
   const [editData, setEditData] = useState<Record<string, any>>({});
+  const [previewDevice, setPreviewDevice] = useState<DeviceType>("desktop");
+  const [isPreviewMode, setIsPreviewMode] = useState(false);
 
   // Funcion para actualizar un campo especifico
   const updateEditField = (key: string, value: any) => {
@@ -45,6 +56,10 @@ export function AdminProvider({ children }: { children: ReactNode }) {
         setEditingSection,
         isPanelOpen,
         setIsPanelOpen,
+        previewDevice,
+        setPreviewDevice,
+        isPreviewMode,
+        setIsPreviewMode,
         editData,
         setEditData,
         updateEditField,

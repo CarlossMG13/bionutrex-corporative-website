@@ -1,6 +1,15 @@
-import * as React from "react";
+import { useHomeSections } from "@/hooks/useHomeSections";
 
 export default function MethodologySection() {
+  const { getSectionByKey } = useHomeSections();
+  
+  const methodologySection = getSectionByKey('methodology');
+  
+  // Contenido dinámico o por defecto
+  const sectionTitle = methodologySection?.title || "Manufactura guíada por la ciencia";
+  const sectionContent = methodologySection?.content || "Controlamos toda la cadena de suministro, desde la selección del cultivar específico de ingredientes botánicos hasta la encapsulación molecular final.";
+  const sectionSubtitle = methodologySection?.subtitle || "Nuestra metodología";
+
   return (
     <div className="bg-[#f6f6f8] py-20">
       <section className="flex flex-col lg:flex-row lg:gap-12 max-w-300 mx-auto px-6">
@@ -8,15 +17,13 @@ export default function MethodologySection() {
         <div className="flex flex-col">
           <div className="title-section">
             <span className="raleway text-[#0d40a5] font-bold uppercase tracking-widest text-xs mb-2 block">
-              Nuestra metodología
+              {sectionSubtitle}
             </span>
             <h2 className="playfair text-[#0d40a5] text-5xl font-serif-title py-2">
-              Manufactura guíada por la ciencia
+              {sectionTitle}
             </h2>
             <p className="raleway text-[#0d40a5] max-w-md mt-4 md:mt-0">
-              Controlamos toda la cadena de suministro, desde la selección del
-              cultivar específico de ingredientes botánicos hasta la
-              encapsulación molecular final.
+              {sectionContent}
             </p>
           </div>
           <div className="space-y-12 relative raleway mt-10 pb-10">
