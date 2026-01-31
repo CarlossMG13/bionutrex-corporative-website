@@ -47,12 +47,20 @@ const storage = multer.diskStorage({
   }
 });
 
-// Filtro para solo permitir imágenes
+// Filtro para permitir múltiples tipos de archivos
 const fileFilter = (req, file, cb) => {
-  if (file.mimetype.startsWith('image/')) {
+  const allowedTypes = [
+    'image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml',
+    'video/mp4', 'video/avi', 'video/mov', 'video/mkv', 'video/webm',
+    'application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'text/plain', 'audio/mpeg', 'audio/wav', 'audio/ogg',
+    'application/zip', 'application/x-rar-compressed', 'application/x-7z-compressed'
+  ];
+  
+  if (allowedTypes.includes(file.mimetype)) {
     cb(null, true);
   } else {
-    cb(new Error('Solo se permiten archivos de imagen'), false);
+    cb(new Error('Tipo de archivo no permitido'), false);
   }
 };
 
@@ -60,7 +68,7 @@ const upload = multer({
   storage: storage,
   fileFilter: fileFilter,
   limits: {
-    fileSize: 5 * 1024 * 1024 // 5MB
+    fileSize: 10 * 1024 * 1024 // 10MB
   }
 });
 
@@ -93,8 +101,8 @@ app.get('/api/uploads/list', (req, res) => {
     }
     
     const files = fs.readdirSync(uploadsPath).filter(file => {
-      // Filtrar solo archivos de imagen
-      return file.match(/\.(jpg|jpeg|png|gif|webp)$/i);
+      // Filtrar archivos comunes de media
+      return file.match(/\.(jpg|jpeg|png|gif|webp|svg|mp4|avi|mov|mkv|webm|pdf|doc|docx|txt|mp3|wav|ogg|zip|rar|7z)$/i);
     });
     
     res.json(files);
@@ -121,6 +129,31 @@ app.post('/api/uploads', upload.single('image'), (req, res) => {
   } catch (error) {
     console.error('Error uploading file:', error);
     res.status(500).json({ error: 'Error al subir el archivo' });
+  }
+});
+
+// Upload multiple files endpoint
+app.post('/api/uploads/multiple', upload.array('files', 10), (req, res) => {
+  try {
+    if (!req.files || req.files.length === 0) {
+      return res.status(400).json({ error: 'No se han subido archivos' });
+    }
+
+    const uploadedFiles = req.files.map(file => ({
+      filename: file.filename,
+      originalName: file.originalname,
+      size: file.size,
+      url: `/uploads/${file.filename}`,
+      type: file.mimetype
+    }));
+
+    res.json({
+      message: `${uploadedFiles.length} archivo(s) subido(s) exitosamente`,
+      files: uploadedFiles
+    });
+  } catch (error) {
+    console.error('Error uploading files:', error);
+    res.status(500).json({ error: 'Error al subir los archivos' });
   }
 });
 

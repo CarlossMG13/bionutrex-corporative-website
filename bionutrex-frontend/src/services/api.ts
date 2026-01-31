@@ -71,6 +71,10 @@ export const homeSectionAPI = {
       headers: { "Content-Type": "multipart/form-data" },
     }),
 
+  // Método específico para actualizar con JSON (incluye imágenes)
+  updateWithJSON: (id: string, data: Partial<HomeSection>) =>
+    api.put<HomeSection>(`/home-sections/${id}`, data),
+
   delete: (id: string) => api.delete(`/home-sections/${id}`),
 };
 

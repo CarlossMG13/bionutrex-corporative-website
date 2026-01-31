@@ -138,23 +138,39 @@ export default function AdminTopbar() {
     switch (action) {
       case 'update':
       case 'visibility':
-        const formData = new FormData();
-        formData.append('title', data.title);
-        formData.append('content', data.content);
-        formData.append('active', data.active.toString());
-        formData.append('order', data.order.toString());
-        
-        if (data.subtitle) {
-          formData.append('subtitle', data.subtitle);
+        // Si hay imágenes, usar el método JSON, sino usar FormData para compatibilidad
+        if (data.images && data.images.length > 0) {
+          const updateData = {
+            title: data.title,
+            content: data.content,
+            active: data.active,
+            order: data.order,
+            subtitle: data.subtitle || null,
+            buttonText: data.buttonText || null,
+            buttonLink: data.buttonLink || null,
+            images: data.images
+          };
+          await homeSectionAPI.updateWithJSON(data.id, updateData);
+        } else {
+          // Método original con FormData para secciones sin imágenes
+          const formData = new FormData();
+          formData.append('title', data.title);
+          formData.append('content', data.content);
+          formData.append('active', data.active.toString());
+          formData.append('order', data.order.toString());
+          
+          if (data.subtitle) {
+            formData.append('subtitle', data.subtitle);
+          }
+          if (data.buttonText) {
+            formData.append('buttonText', data.buttonText);
+          }
+          if (data.buttonLink) {
+            formData.append('buttonLink', data.buttonLink);
+          }
+          
+          await homeSectionAPI.update(data.id, formData);
         }
-        if (data.buttonText) {
-          formData.append('buttonText', data.buttonText);
-        }
-        if (data.buttonLink) {
-          formData.append('buttonLink', data.buttonLink);
-        }
-        
-        await homeSectionAPI.update(data.id, formData);
         break;
         
       case 'create':
@@ -272,44 +288,7 @@ export default function AdminTopbar() {
           )}
         </div>
 
-        {/* Centro - Controles de dispositivo */}
-        {showPreviewControls && (
-          <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
-            <button
-              onClick={() => setPreviewDevice("desktop")}
-              className={`p-2 rounded-md transition-colors ${
-                previewDevice === "desktop"
-                  ? "bg-white shadow-sm text-gray-700"
-                  : "text-gray-400 hover:text-gray-600 hover:bg-white"
-              }`}
-              title="Desktop (1200px+)"
-            >
-              <Monitor size={18} />
-            </button>
-            <button
-              onClick={() => setPreviewDevice("tablet")}
-              className={`p-2 rounded-md transition-colors ${
-                previewDevice === "tablet"
-                  ? "bg-white shadow-sm text-gray-700"
-                  : "text-gray-400 hover:text-gray-600 hover:bg-white"
-              }`}
-              title="Tablet (768px - 1199px)"
-            >
-              <Tablet size={18} />
-            </button>
-            <button
-              onClick={() => setPreviewDevice("mobile")}
-              className={`p-2 rounded-md transition-colors ${
-                previewDevice === "mobile"
-                  ? "bg-white shadow-sm text-gray-700"
-                  : "text-gray-400 hover:text-gray-600 hover:bg-white"
-              }`}
-              title="Mobile (< 768px)"
-            >
-              <Smartphone size={18} />
-            </button>
-          </div>
-        )}
+        
 
         {/* Lado derecho - Usuario y acciones */}
         <div className="flex items-center gap-3">

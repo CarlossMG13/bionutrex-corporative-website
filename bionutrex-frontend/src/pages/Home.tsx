@@ -48,18 +48,20 @@ export default function Home() {
   };
 
   return (
-    <div className="home-page">
+    <main className="home-page w-full overflow-x-hidden min-h-screen">
       {/* Renderizar secciones según su orden */}
-      {sortedSections.map((section) => {
-        const SectionComponent = sectionComponents[section.sectionKey as keyof typeof sectionComponents];
-        
-        // Solo renderizar si existe el componente para esa sectionKey
-        if (SectionComponent) {
-          return <SectionComponent key={section.id} />;
-        }
-        
-        return null;
-      })}
-    </div>
+      <div className="flex flex-col">
+        {sortedSections.map((section) => {
+          const SectionComponent = sectionComponents[section.sectionKey as keyof typeof sectionComponents];
+          
+          // Solo renderizar si existe el componente para esa sectionKey
+          if (SectionComponent) {
+            return <SectionComponent key={section.id} />;
+          }
+          
+          return null;
+        })}
+      </div>
+    </main>
   );
 }

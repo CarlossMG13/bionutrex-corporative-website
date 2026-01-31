@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, type ReactNode } from "react";
+import { createContext, useContext, useState, useCallback, type ReactNode } from "react";
 
 // Estado de edicion
 interface EditingSection {
@@ -33,6 +33,7 @@ interface AdminContexType {
   setPreviewDevice: (device: DeviceType) => void;
   isPreviewMode: boolean;
   setIsPreviewMode: (enabled: boolean) => void;
+  togglePreviewMode: () => void;
 
   // Datos temporales de edicion
   editData: Record<string, any>;
@@ -63,6 +64,11 @@ export function AdminProvider({ children }: { children: ReactNode }) {
   const [isPreviewMode, setIsPreviewMode] = useState(false);
   const [pendingChanges, setPendingChanges] = useState<PendingChange[]>([]);
   const [isPublishing, setIsPublishing] = useState(false);
+
+  // Funcion para alternar el modo preview
+  const togglePreviewMode = useCallback(() => {
+    setIsPreviewMode(prev => !prev);
+  }, []);
 
   // Funcion para actualizar un campo especifico
   const updateEditField = (key: string, value: any) => {
@@ -103,6 +109,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
         setPreviewDevice,
         isPreviewMode,
         setIsPreviewMode,
+        togglePreviewMode,
         editData,
         setEditData,
         updateEditField,

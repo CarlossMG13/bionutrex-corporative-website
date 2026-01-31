@@ -1,12 +1,10 @@
-import { useState } from "react";
+import React, { useState, useRef } from "react";
 import {
   Upload,
   Search,
-  Filter,
   Grid3X3,
   List,
   Eye,
-  Edit,
   Trash2,
   Download,
   Copy,
@@ -16,133 +14,78 @@ import {
   FileText,
   Music,
   Archive,
-  Plus,
   FolderPlus,
+  X,
+  AlertCircle,
+  CheckCircle,
+  Loader2,
+  RefreshCw,
 } from "lucide-react";
-
-interface MediaFile {
-  id: string;
-  name: string;
-  type: "image" | "video" | "document" | "audio" | "archive";
-  size: number;
-  url: string;
-  thumbnail?: string;
-  uploadDate: string;
-  dimensions?: {
-    width: number;
-    height: number;
-  };
-  tags: string[];
-  folder: string;
-}
-
-const mockMediaFiles: MediaFile[] = [
-  {
-    id: "1",
-    name: "omega-3-product.jpg",
-    type: "image",
-    size: 245760,
-    url: "/api/placeholder/400/300",
-    thumbnail: "/api/placeholder/400/300",
-    uploadDate: "2024-01-15",
-    dimensions: { width: 1920, height: 1080 },
-    tags: ["producto", "omega-3", "suplemento"],
-    folder: "productos",
-  },
-  {
-    id: "2",
-    name: "laboratorio-video.mp4",
-    type: "video",
-    size: 15728640,
-    url: "/videos/laboratorio.mp4",
-    thumbnail: "/api/placeholder/400/300",
-    uploadDate: "2024-01-10",
-    tags: ["laboratorio", "proceso", "calidad"],
-    folder: "institucional",
-  },
-  {
-    id: "3",
-    name: "catalogo-productos-2024.pdf",
-    type: "document",
-    size: 2097152,
-    url: "/documents/catalogo.pdf",
-    uploadDate: "2024-01-08",
-    tags: ["catálogo", "productos", "2024"],
-    folder: "documentos",
-  },
-  {
-    id: "4",
-    name: "hero-background.jpg",
-    type: "image",
-    size: 512000,
-    url: "/api/placeholder/1920/1080",
-    thumbnail: "/api/placeholder/1920/1080",
-    uploadDate: "2024-01-05",
-    dimensions: { width: 1920, height: 1080 },
-    tags: ["hero", "background", "home"],
-    folder: "website",
-  },
-];
-
-const folders = ["todos", "productos", "institucional", "documentos", "website", "blog"];
+import useMediaLibrary from "../../hooks/useMediaLibrary";
 
 export default function MediaLibrary() {
-  const [mediaFiles, setMediaFiles] = useState<MediaFile[]>(mockMediaFiles);
+  const {
+    files,
+    folders,
+    loading,
+    error,
+    uploading,
+    uploadProgress,
+    stats,
+    loadFiles,
+    uploadFiles,
+    deleteFile,
+    deleteFiles,
+    createFolder,
+    formatFileSize,
+  } = useMediaLibrary();
+
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedFolder, setSelectedFolder] = useState("todos");
   const [selectedFiles, setSelectedFiles] = useState<string[]>([]);
   const [showUploadModal, setShowUploadModal] = useState(false);
+  const [showCreateFolder, setShowCreateFolder] = useState(false);
+  const [newFolderName, setNewFolderName] = useState("");
+  const [dragOver, setDragOver] = useState(false);
+  const [previewFile, setPreviewFile] = useState<string | null>(null);
+  
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Obtener lista de carpetas únicas
+  const folderNames = ["todos", ...new Set(folders.map(f => f.name))];
 
   const getFileIcon = (type: string) => {
     switch (type) {
-      case "image":
-        return ImageIcon;
-      case "video":
-        return Video;
-      case "document":
-        return FileText;
-      case "audio":
-        return Music;
-      case "archive":
-        return Archive;
-      default:
-        return FileText;
+      case "image": return ImageIcon;
+      case "video": return Video;
+      case "document": return FileText;
+      case "audio": return Music;
+      case "archive": return Archive;
+      default: return FileText;
     }
-  };
-
-  const formatFileSize = (bytes: number) => {
-    if (bytes === 0) return "0 Bytes";
-    const k = 1024;
-    const sizes = ["Bytes", "KB", "MB", "GB"];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
   };
 
   const getFileTypeColor = (type: string) => {
     switch (type) {
-      case "image":
-        return "bg-green-100 text-green-800";
-      case "video":
-        return "bg-purple-100 text-purple-800";
-      case "document":
-        return "bg-blue-100 text-blue-800";
-      case "audio":
-        return "bg-yellow-100 text-yellow-800";
-      case "archive":
-        return "bg-gray-100 text-gray-800";
-      default:
-        return "bg-gray-100 text-gray-800";
+      case "image": return "bg-green-100 text-green-800";
+      case "video": return "bg-purple-100 text-purple-800";
+      case "document": return "bg-blue-100 text-blue-800";
+      case "audio": return "bg-yellow-100 text-yellow-800";
+      case "archive": return "bg-gray-100 text-gray-800";
+      default: return "bg-gray-100 text-gray-800";
     }
   };
 
-  const filteredFiles = mediaFiles.filter((file) => {
+  // Filtrar archivos
+  const filteredFiles = files.filter((file) => {
     const matchesSearch = file.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          file.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()));
     const matchesFolder = selectedFolder === "todos" || file.folder === selectedFolder;
     return matchesSearch && matchesFolder;
   });
 
+  // Handlers
   const handleFileSelect = (fileId: string) => {
     setSelectedFiles(prev => 
       prev.includes(fileId) 
@@ -159,8 +102,173 @@ export default function MediaLibrary() {
     }
   };
 
+  // Manejo de archivos
+  const handleFileUpload = async (fileList: FileList) => {
+    try {
+      await uploadFiles(fileList);
+      setShowUploadModal(false);
+    } catch (error) {
+      console.error('Error uploading files:', error);
+    }
+  };
+
+  const handleDeleteSelected = async () => {
+    if (selectedFiles.length === 0) return;
+    
+    if (confirm(`¿Estás seguro de eliminar ${selectedFiles.length} archivo(s)?`)) {
+      try {
+        await deleteFiles(selectedFiles);
+        setSelectedFiles([]);
+      } catch (error) {
+        console.error('Error deleting files:', error);
+      }
+    }
+  };
+
+  const handleCreateFolder = async () => {
+    if (newFolderName.trim() === '') return;
+    
+    try {
+      await createFolder(newFolderName.trim());
+      setNewFolderName('');
+      setShowCreateFolder(false);
+    } catch (error) {
+      console.error('Error creating folder:', error);
+    }
+  };
+
+  // Drag & Drop handlers
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setDragOver(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    setDragOver(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setDragOver(false);
+    
+    const droppedFiles = e.dataTransfer.files;
+    if (droppedFiles.length > 0) {
+      handleFileUpload(droppedFiles);
+    }
+  };
+
+  const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      handleFileUpload(e.target.files);
+    }
+  };
+
+  const handleDownloadSelected = () => {
+    selectedFiles.forEach(fileId => {
+      const file = files.find(f => f.id === fileId);
+      if (file) {
+        const link = document.createElement('a');
+        link.href = file.url;
+        link.download = file.name;
+        link.click();
+      }
+    });
+  };
+
+  if (loading) {
+    return (
+      <div className="p-6 space-y-6">
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="w-8 h-8 animate-spin text-[#0d40a5]" />
+          <span className="ml-3 text-lg text-gray-600">Cargando biblioteca de medios...</span>
+        </div>
+      </div>
+    );
+  }
+
+  const renderFilePreview = (file: any) => {
+    if (file.type === 'image') {
+      return (
+        <img
+          src={file.url}
+          alt={file.name}
+          className="max-w-full max-h-[80vh] object-contain"
+        />
+      );
+    }
+
+    const FileIcon = getFileIcon(file.type);
+    return (
+      <div className="p-8 text-center">
+        <div className="w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+          <FileIcon className="w-16 h-16 text-gray-400" />
+        </div>
+        <h3 className="text-lg font-medium text-gray-900 mb-2">{file.name}</h3>
+        <p className="text-gray-600 mb-4">{formatFileSize(file.size)}</p>
+        <a
+          href={file.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-2 px-4 py-2 bg-[#0d40a5] text-white rounded-lg hover:bg-[#0d40a5]/90 transition-colors"
+        >
+          <Eye className="w-4 h-4" />
+          Abrir archivo
+        </a>
+      </div>
+    );
+  };
+
   return (
-    <div className="p-6 space-y-6">
+    <div 
+      className="p-6 space-y-6"
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+    >
+      {/* Error Banner */}
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-center gap-3">
+          <AlertCircle className="w-5 h-5 text-red-600" />
+          <span className="text-red-800">{error}</span>
+          <button 
+            onClick={loadFiles}
+            className="ml-auto text-red-600 hover:text-red-800 transition-colors"
+          >
+            <RefreshCw className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+
+      {/* Upload Progress */}
+      {uploading && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <div className="flex items-center gap-3 mb-2">
+            <Loader2 className="w-5 h-5 text-blue-600 animate-spin" />
+            <span className="text-blue-800 font-medium">Subiendo archivos...</span>
+          </div>
+          <div className="w-full bg-blue-200 rounded-full h-2">
+            <div 
+              className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+              style={{ width: `${uploadProgress}%` }}
+            />
+          </div>
+          <p className="text-sm text-blue-600 mt-1">{Math.round(uploadProgress)}% completado</p>
+        </div>
+      )}
+
+      {/* Global Drag Overlay */}
+      {dragOver && (
+        <div className="fixed inset-0 bg-[#0d40a5] bg-opacity-20 flex items-center justify-center z-40">
+          <div className="bg-white rounded-lg p-8 shadow-lg border-2 border-dashed border-[#0d40a5]">
+            <Upload className="w-16 h-16 text-[#0d40a5] mx-auto mb-4" />
+            <p className="text-lg font-medium text-gray-900 text-center">
+              Suelta los archivos para subirlos
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
@@ -170,13 +278,17 @@ export default function MediaLibrary() {
           </p>
         </div>
         <div className="flex gap-3">
-          <button className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+          <button 
+            onClick={() => setShowCreateFolder(true)}
+            className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+          >
             <FolderPlus className="w-4 h-4" />
             Nueva Carpeta
           </button>
           <button
             onClick={() => setShowUploadModal(true)}
             className="flex items-center gap-2 px-4 py-2 bg-[#0d40a5] text-white rounded-lg hover:bg-[#0d40a5]/90 transition-colors"
+            disabled={uploading}
           >
             <Upload className="w-4 h-4" />
             Subir Archivos
@@ -193,7 +305,7 @@ export default function MediaLibrary() {
             </div>
             <div>
               <p className="text-sm text-gray-600">Total Archivos</p>
-              <p className="text-xl font-bold text-gray-900">{mediaFiles.length}</p>
+              <p className="text-xl font-bold text-gray-900">{stats.totalFiles}</p>
             </div>
           </div>
         </div>
@@ -205,7 +317,7 @@ export default function MediaLibrary() {
             <div>
               <p className="text-sm text-gray-600">Espacio Usado</p>
               <p className="text-xl font-bold text-gray-900">
-                {formatFileSize(mediaFiles.reduce((acc, file) => acc + file.size, 0))}
+                {formatFileSize(stats.totalSize)}
               </p>
             </div>
           </div>
@@ -217,7 +329,7 @@ export default function MediaLibrary() {
             </div>
             <div>
               <p className="text-sm text-gray-600">Carpetas</p>
-              <p className="text-xl font-bold text-gray-900">{folders.length - 1}</p>
+              <p className="text-xl font-bold text-gray-900">{stats.folderCount}</p>
             </div>
           </div>
         </div>
@@ -228,9 +340,7 @@ export default function MediaLibrary() {
             </div>
             <div>
               <p className="text-sm text-gray-600">Imágenes</p>
-              <p className="text-xl font-bold text-gray-900">
-                {mediaFiles.filter(f => f.type === "image").length}
-              </p>
+              <p className="text-xl font-bold text-gray-900">{stats.imageCount}</p>
             </div>
           </div>
         </div>
@@ -255,7 +365,7 @@ export default function MediaLibrary() {
               onChange={(e) => setSelectedFolder(e.target.value)}
               className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0d40a5] focus:border-[#0d40a5]"
             >
-              {folders.map(folder => (
+              {folderNames.map(folder => (
                 <option key={folder} value={folder}>
                   {folder.charAt(0).toUpperCase() + folder.slice(1)}
                 </option>
@@ -269,10 +379,16 @@ export default function MediaLibrary() {
                 <span className="text-sm text-gray-600">
                   {selectedFiles.length} seleccionados
                 </span>
-                <button className="px-3 py-1 text-sm bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors">
+                <button 
+                  onClick={handleDeleteSelected}
+                  className="px-3 py-1 text-sm bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors"
+                >
                   Eliminar
                 </button>
-                <button className="px-3 py-1 text-sm bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors">
+                <button 
+                  onClick={handleDownloadSelected}
+                  className="px-3 py-1 text-sm bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors"
+                >
                   Descargar
                 </button>
               </div>
@@ -285,8 +401,12 @@ export default function MediaLibrary() {
               {viewMode === "grid" ? <List className="w-4 h-4" /> : <Grid3X3 className="w-4 h-4" />}
             </button>
             
-            <button className="p-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
-              <Filter className="w-4 h-4" />
+            <button 
+              onClick={loadFiles}
+              className="p-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+              title="Recargar"
+            >
+              <RefreshCw className="w-4 h-4" />
             </button>
           </div>
         </div>
@@ -298,7 +418,7 @@ export default function MediaLibrary() {
           <input
             type="checkbox"
             id="selectAll"
-            checked={selectedFiles.length === filteredFiles.length}
+            checked={selectedFiles.length === filteredFiles.length && filteredFiles.length > 0}
             onChange={handleSelectAll}
             className="rounded border-gray-300 text-[#0d40a5] focus:ring-[#0d40a5]"
           />
@@ -318,12 +438,14 @@ export default function MediaLibrary() {
             return (
               <div
                 key={file.id}
-                className={`bg-white rounded-lg border-2 overflow-hidden cursor-pointer transition-all hover:shadow-md ${
+                className={`group bg-white rounded-lg border-2 overflow-hidden cursor-pointer transition-all hover:shadow-md ${
                   isSelected ? "border-[#0d40a5] shadow-md" : "border-gray-200"
                 }`}
-                onClick={() => handleFileSelect(file.id)}
               >
-                <div className="aspect-square bg-gray-100 relative">
+                <div 
+                  className="aspect-square bg-gray-100 relative"
+                  onClick={() => handleFileSelect(file.id)}
+                >
                   {file.type === "image" && file.thumbnail ? (
                     <img
                       src={file.thumbnail}
@@ -339,9 +461,7 @@ export default function MediaLibrary() {
                   {isSelected && (
                     <div className="absolute inset-0 bg-[#0d40a5] bg-opacity-20 flex items-center justify-center">
                       <div className="w-6 h-6 bg-[#0d40a5] rounded-full flex items-center justify-center">
-                        <svg className="w-4 h-4 text-white fill-current" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                        </svg>
+                        <CheckCircle className="w-4 h-4 text-white fill-current" />
                       </div>
                     </div>
                   )}
@@ -354,10 +474,25 @@ export default function MediaLibrary() {
                   
                   <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
                     <div className="flex gap-1">
-                      <button className="p-1 bg-white bg-opacity-80 rounded-lg hover:bg-opacity-100 transition-all">
+                      <button 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setPreviewFile(file.id);
+                        }}
+                        className="p-1 bg-white bg-opacity-80 rounded-lg hover:bg-opacity-100 transition-all"
+                      >
                         <Eye className="w-3 h-3 text-gray-600" />
                       </button>
-                      <button className="p-1 bg-white bg-opacity-80 rounded-lg hover:bg-opacity-100 transition-all">
+                      <button 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          const link = document.createElement('a');
+                          link.href = file.url;
+                          link.download = file.name;
+                          link.click();
+                        }}
+                        className="p-1 bg-white bg-opacity-80 rounded-lg hover:bg-opacity-100 transition-all"
+                      >
                         <Download className="w-3 h-3 text-gray-600" />
                       </button>
                     </div>
@@ -390,7 +525,7 @@ export default function MediaLibrary() {
                   <th className="px-6 py-3 text-left">
                     <input
                       type="checkbox"
-                      checked={selectedFiles.length === filteredFiles.length}
+                      checked={selectedFiles.length === filteredFiles.length && filteredFiles.length > 0}
                       onChange={handleSelectAll}
                       className="rounded border-gray-300 text-[#0d40a5] focus:ring-[#0d40a5]"
                     />
@@ -459,19 +594,35 @@ export default function MediaLibrary() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex gap-1">
-                          <button className="p-1 text-gray-400 hover:text-blue-600 transition-colors">
+                          <button 
+                            onClick={() => setPreviewFile(file.id)}
+                            className="p-1 text-gray-400 hover:text-blue-600 transition-colors"
+                          >
                             <Eye className="w-4 h-4" />
                           </button>
-                          <button className="p-1 text-gray-400 hover:text-green-600 transition-colors">
+                          <button 
+                            onClick={() => {
+                              const link = document.createElement('a');
+                              link.href = file.url;
+                              link.download = file.name;
+                              link.click();
+                            }}
+                            className="p-1 text-gray-400 hover:text-green-600 transition-colors"
+                          >
                             <Download className="w-4 h-4" />
                           </button>
-                          <button className="p-1 text-gray-400 hover:text-purple-600 transition-colors">
+                          <button 
+                            onClick={() => {
+                              navigator.clipboard.writeText(file.url);
+                            }}
+                            className="p-1 text-gray-400 hover:text-purple-600 transition-colors"
+                          >
                             <Copy className="w-4 h-4" />
                           </button>
-                          <button className="p-1 text-gray-400 hover:text-orange-600 transition-colors">
-                            <Edit className="w-4 h-4" />
-                          </button>
-                          <button className="p-1 text-gray-400 hover:text-red-600 transition-colors">
+                          <button 
+                            onClick={() => deleteFile(file.id)}
+                            className="p-1 text-gray-400 hover:text-red-600 transition-colors"
+                          >
                             <Trash2 className="w-4 h-4" />
                           </button>
                         </div>
@@ -486,14 +637,17 @@ export default function MediaLibrary() {
       )}
 
       {/* Empty State */}
-      {filteredFiles.length === 0 && (
+      {filteredFiles.length === 0 && !loading && (
         <div className="text-center py-12">
           <ImageIcon className="w-16 h-16 text-gray-300 mx-auto mb-4" />
           <h3 className="text-lg font-medium text-gray-900 mb-2">
             No se encontraron archivos
           </h3>
           <p className="text-gray-600 mb-4">
-            Sube algunos archivos o ajusta los filtros de búsqueda
+            {searchTerm || selectedFolder !== 'todos' 
+              ? 'Ajusta los filtros de búsqueda o sube algunos archivos'
+              : 'Sube algunos archivos para comenzar'
+            }
           </p>
           <button
             onClick={() => setShowUploadModal(true)}
@@ -510,34 +664,134 @@ export default function MediaLibrary() {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             <div className="p-6">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">
-                Subir Archivos
-              </h2>
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-semibold text-gray-900">
+                  Subir Archivos
+                </h2>
+                <button
+                  onClick={() => setShowUploadModal(false)}
+                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                  disabled={uploading}
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
               
-              <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-[#0d40a5] hover:bg-[#0d40a5]/5 transition-colors">
+              <div 
+                className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-[#0d40a5] hover:bg-[#0d40a5]/5 transition-colors cursor-pointer"
+                onClick={() => fileInputRef.current?.click()}
+              >
                 <Upload className="w-12 h-12 text-gray-400 mx-auto mb-4" />
                 <p className="text-lg font-medium text-gray-900 mb-2">
                   Arrastra archivos aquí o haz clic para seleccionar
                 </p>
                 <p className="text-sm text-gray-500 mb-4">
-                  Soporta: JPG, PNG, GIF, MP4, PDF, DOC (Máx. 10MB)
+                  Soporta: JPG, PNG, GIF, MP4, PDF, DOC (Máx. 10MB por archivo)
                 </p>
-                <button className="px-4 py-2 bg-[#0d40a5] text-white rounded-lg hover:bg-[#0d40a5]/90 transition-colors">
-                  Seleccionar Archivos
+                <button 
+                  disabled={uploading}
+                  className="px-4 py-2 bg-[#0d40a5] text-white rounded-lg hover:bg-[#0d40a5]/90 transition-colors disabled:opacity-50"
+                >
+                  {uploading ? 'Subiendo...' : 'Seleccionar Archivos'}
                 </button>
               </div>
+
+              <input
+                ref={fileInputRef}
+                type="file"
+                multiple
+                accept="image/*,video/*,.pdf,.doc,.docx"
+                onChange={handleFileInputChange}
+                className="hidden"
+                disabled={uploading}
+              />
               
               <div className="flex justify-end gap-3 mt-6">
                 <button
                   onClick={() => setShowUploadModal(false)}
+                  disabled={uploading}
+                  className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
+                >
+                  {uploading ? 'Subiendo...' : 'Cancelar'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Create Folder Modal */}
+      {showCreateFolder && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg max-w-md w-full">
+            <div className="p-6">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-semibold text-gray-900">
+                  Crear Nueva Carpeta
+                </h2>
+                <button
+                  onClick={() => {
+                    setShowCreateFolder(false);
+                    setNewFolderName('');
+                  }}
+                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Nombre de la carpeta
+                  </label>
+                  <input
+                    type="text"
+                    value={newFolderName}
+                    onChange={(e) => setNewFolderName(e.target.value)}
+                    placeholder="Ej: productos, documentos..."
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0d40a5] focus:border-[#0d40a5]"
+                    onKeyPress={(e) => e.key === 'Enter' && handleCreateFolder()}
+                  />
+                </div>
+              </div>
+              
+              <div className="flex justify-end gap-3 mt-6">
+                <button
+                  onClick={() => {
+                    setShowCreateFolder(false);
+                    setNewFolderName('');
+                  }}
                   className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
                 >
                   Cancelar
                 </button>
-                <button className="px-4 py-2 bg-[#0d40a5] text-white rounded-lg hover:bg-[#0d40a5]/90 transition-colors">
-                  Subir
+                <button
+                  onClick={handleCreateFolder}
+                  disabled={!newFolderName.trim()}
+                  className="px-4 py-2 bg-[#0d40a5] text-white rounded-lg hover:bg-[#0d40a5]/90 transition-colors disabled:opacity-50"
+                >
+                  Crear Carpeta
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* File Preview Modal */}
+      {previewFile && (
+        <div className="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center p-4 z-50">
+          <div className="relative max-w-4xl max-h-full">
+            <button
+              onClick={() => setPreviewFile(null)}
+              className="absolute -top-12 right-0 p-2 text-white hover:bg-white hover:bg-opacity-20 rounded-lg transition-colors"
+            >
+              <X className="w-6 h-6" />
+            </button>
+            
+            <div className="bg-white rounded-lg overflow-hidden">
+              {previewFile && renderFilePreview(files.find(f => f.id === previewFile))}
             </div>
           </div>
         </div>

@@ -50,8 +50,23 @@ model HomeSection {
   order      Int      @default(0)
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
+  images     SectionImage[]
 
   @@map("home_sections")
+}
+
+model SectionImage {
+  id        String      @id @default(cuid())
+  url       String
+  alt       String
+  caption   String?
+  order     Int         @default(0)
+  sectionId String
+  section   HomeSection @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  @@map("section_images")
 }
 
 model BlogPost {
