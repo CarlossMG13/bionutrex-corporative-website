@@ -19,12 +19,21 @@ export interface HomeSection {
   subtitle?: string;
   content: string;
   imageUrl?: string;
+  images?: SectionImage[];
   buttonText?: string;
   buttonLink?: string;
   active: boolean;
   order: number;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface SectionImage {
+  id: string;
+  url: string;
+  alt: string;
+  caption?: string;
+  order: number;
 }
 
 export interface BlogPost {

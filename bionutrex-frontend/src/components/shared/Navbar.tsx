@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { Menu, X } from "lucide-react";
 
-export function Navbar() {
+export function Navbar({ isPreview = false, previewDevice }: { isPreview?: boolean; previewDevice?: 'mobile' | 'tablet' | 'desktop' }) {
   const [isOpen, setIsOpen] = useState(false);
   const [isVisible, setIsVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
@@ -22,30 +22,71 @@ export function Navbar() {
       setLastScrollY(currentScrollY);
     };
 
-    window.addEventListener("scroll", controlNavbar);
+    // Solo agregar el listener de scroll si no estamos en preview mode
+    if (!isPreview) {
+      window.addEventListener("scroll", controlNavbar);
+    }
 
     return () => {
       window.removeEventListener("scroll", controlNavbar);
     };
-  });
+  }, [lastScrollY, isPreview]);
+
+  // Cerrar el menú móvil cuando el tamaño de pantalla cambie a desktop
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth >= 768 && isOpen) {
+        setIsOpen(false);
+      }
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [isOpen]);
+
+  // Función para determinar si mostrar versión móvil
+  const shouldShowMobile = () => {
+    if (isPreview && previewDevice) {
+      return previewDevice === 'mobile';
+    }
+    // En modo no-preview, usar media queries normales
+    return false;
+  };
+
+  // Función para determinar si mostrar versión desktop
+  const shouldShowDesktop = () => {
+    if (isPreview && previewDevice) {
+      return previewDevice === 'tablet' || previewDevice === 'desktop';
+    }
+    // En modo no-preview, usar media queries normales
+    return false;
+  };
 
   return (
     <>
       {/* Navbar principal */}
       <div
-        className={`fixed top-0 left-0 right-0 z-50 bg-white p-5 flex items-center justify-between border border-b shadow-sm transition-transform duration-300 | lg:px-10 ${
-          isVisible ? "translate-y-0" : "-translate-y-full"
+        className={`${isPreview ? 'relative' : 'fixed top-0 left-0 right-0 z-50'} bg-white p-5 flex items-center justify-between border border-b shadow-sm transition-transform duration-300 | lg:px-10 ${
+          isVisible && !isPreview ? "translate-y-0" : isPreview ? "" : "-translate-y-full"
         }`}
       >
         {/* Logo */}
-        <div className="logo flex text-center items-center justify-center order-2 flex-1 | md:order-1 md:flex-initial md:justify-start">
+        <div className={`logo flex text-center items-center justify-center ${
+          isPreview 
+            ? (shouldShowMobile() ? 'order-2 flex-1' : 'order-1 flex-initial justify-start')
+            : 'order-2 flex-1 | md:order-1 md:flex-initial md:justify-start'
+        }`}>
           <Link to="/">
             <span className="canada font-bold text-3xl">BIONUTREX</span>
           </Link>
         </div>
 
         {/* Desktop navbar */}
-        <nav className="hidden md:flex items-center raleway font-medium order-2 [&>a]:px-3 [&>a]:py-2 | md:[&>a]:text-sm | lg:[&>a]:text-md">
+        <nav className={`${
+          isPreview
+            ? (shouldShowDesktop() ? 'flex' : 'hidden')
+            : 'hidden md:flex'
+        } items-center raleway font-medium order-2 [&>a]:px-3 [&>a]:py-2 | md:[&>a]:text-sm | lg:[&>a]:text-md`}>
           <Link
             to="/"
             className="text-[#333] hover:bg-[#e2e2e2] rounded-sm transition-colors duration-300"
@@ -100,7 +141,7 @@ export function Navbar() {
       <>
         {/* Overlay oscuro con animación */}
         <div
-          className={`fixed inset-0 bg-black/50 z-40 md:hidden transition-opacity duration-300 ${
+          className={`${isPreview ? 'absolute' : 'fixed'} inset-0 bg-black/50 z-40 md:hidden transition-opacity duration-300 ${
             isOpen ? "opacity-100" : "opacity-0 pointer-events-none"
           }`}
           onClick={() => setIsOpen(false)}
@@ -108,7 +149,7 @@ export function Navbar() {
 
         {/* Sidebar con animación de deslizamiento */}
         <div
-          className={`fixed top-0 left-0 h-full w-64 bg-[#0d40a5] shadow-2xl z-50 transform transition-transform duration-300 ease-in-out md:hidden ${
+          className={`${isPreview ? 'absolute' : 'fixed'} top-0 left-0 h-full w-64 bg-[#0d40a5] shadow-2xl z-50 transform transition-transform duration-300 ease-in-out md:hidden ${
             isOpen ? "translate-x-0" : "-translate-x-full"
           }`}
         >

@@ -117,8 +117,14 @@
   * {
     @apply border-border outline-ring/50;
   }
-  body {
+  html, body {
     @apply bg-background text-foreground;
+    overflow-x: hidden;
+    max-width: 100vw;
+  }
+  #root {
+    overflow-x: hidden;
+    max-width: 100vw;
   }
 }
 
@@ -165,4 +171,45 @@ html.lenis {
 
 .lenis.lenis-scrolling iframe {
   pointer-events: none;
+}
+
+/* Preview containers - Force responsive behavior */
+.mobile-preview-container {
+  /* Force mobile styles inside this container */
+}
+
+.mobile-preview-container .hidden.md\:flex {
+  display: none !important;
+}
+
+.mobile-preview-container .md\:hidden {
+  display: flex !important;
+}
+
+.mobile-preview-container .md\:order-1 {
+  order: 2 !important;
+}
+
+.mobile-preview-container .order-2 {
+  order: 2 !important;
+}
+
+.mobile-preview-container .flex-1 {
+  flex: 1 !important;
+}
+
+.tablet-preview-container .hidden.md\:flex {
+  display: flex !important;
+}
+
+.tablet-preview-container .md\:hidden {
+  display: none !important;
+}
+
+.desktop-preview-container .hidden.md\:flex {
+  display: flex !important;
+}
+
+.desktop-preview-container .md\:hidden {
+  display: none !important;
 }

@@ -45,7 +45,7 @@ export const sliderAPI = {
     }),
 
   update: (id: string, formData: FormData) =>
-    api.put<Slider>(`sliders/${id}`, formData, {
+    api.put<Slider>(`/sliders/${id}`, formData, {
       headers: { "Content-Type": "multipart/form-data" },
     }),
 
@@ -71,6 +71,10 @@ export const homeSectionAPI = {
       headers: { "Content-Type": "multipart/form-data" },
     }),
 
+  // Método específico para actualizar con JSON (incluye imágenes)
+  updateWithJSON: (id: string, data: Partial<HomeSection>) =>
+    api.put<HomeSection>(`/home-sections/${id}`, data),
+
   delete: (id: string) => api.delete(`/home-sections/${id}`),
 };
 
@@ -83,7 +87,7 @@ export const blogPostAPI = {
   getBySlug: (slug: string) => api.get<BlogPost>(`/blog-posts/slug/${slug}`),
 
   create: (formData: FormData) =>
-    api.post<BlogPost>("/blog", formData, {
+    api.post<BlogPost>("/blog-posts", formData, {
       headers: { "Content-Type": "multipart/form-data" },
     }),
 

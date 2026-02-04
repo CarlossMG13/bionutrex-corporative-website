@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Imágenes Assets</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+        }
+        .image-test {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 20px;
+        }
+        .image-item {
+            border: 1px solid #ddd;
+            padding: 10px;
+            border-radius: 8px;
+        }
+        .image-item img {
+            width: 100%;
+            height: 150px;
+            object-fit: cover;
+            border-radius: 4px;
+        }
+        .error {
+            color: red;
+            background: #ffe6e6;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        .success {
+            color: green;
+            background: #e6ffe6;
+            padding: 10px;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Test de Imágenes de Assets</h1>
+    <div id="results"></div>
+    <div class="image-test" id="imageTest"></div>
+
+    <script>
+        const images = [
+            '/images/MethImage.jpg',
+            '/images/heroSection-img.jpg', 
+            '/images/img1-grid-product.jpg',
+            '/images/img2-grid-product.jpg',
+            '/images/img3-grid-product.jpg'
+        ];
+
+        const resultsDiv = document.getElementById('results');
+        const imageTestDiv = document.getElementById('imageTest');
+        let loadedCount = 0;
+        let errorCount = 0;
+
+        images.forEach(imagePath => {
+            const imageItem = document.createElement('div');
+            imageItem.className = 'image-item';
+
+            const img = document.createElement('img');
+            img.src = imagePath;
+            img.alt = imagePath;
+
+            const label = document.createElement('p');
+            label.textContent = imagePath;
+
+            img.onload = () => {
+                loadedCount++;
+                imageItem.style.border = '2px solid green';
+                updateResults();
+            };
+
+            img.onerror = () => {
+                errorCount++;
+                imageItem.style.border = '2px solid red';
+                label.style.color = 'red';
+                label.textContent = `❌ ERROR: ${imagePath}`;
+                updateResults();
+            };
+
+            imageItem.appendChild(img);
+            imageItem.appendChild(label);
+            imageTestDiv.appendChild(imageItem);
+        });
+
+        function updateResults() {
+            const total = images.length;
+            const processed = loadedCount + errorCount;
+            
+            if (processed === total) {
+                resultsDiv.innerHTML = `
+                    <div class="${errorCount === 0 ? 'success' : 'error'}">
+                        <h3>Resultados del Test:</h3>
+                        <p>✅ Imágenes cargadas: ${loadedCount}/${total}</p>
+                        <p>❌ Errores: ${errorCount}/${total}</p>
+                        ${errorCount === 0 ? '<p><strong>¡Todas las imágenes se cargan correctamente! 🎉</strong></p>' : '<p><strong>Hay problemas con algunas imágenes</strong></p>'}
+                    </div>
+                `;
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,31 +1,53 @@
 import * as React from "react";
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, Navigate } from "react-router-dom";
 import { toast } from "sonner";
 import { Link } from "react-router-dom";
 import { Activity } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
+  const { login, isAuthenticated, loading } = useAuth();
+
+  // Redirigir si ya está autenticado
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#0d40a5] mx-auto mb-4"></div>
+          <p className="text-gray-600">Verificando autenticación...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (isAuthenticated) {
+    return <Navigate to="/admin" replace />;
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
-    // Simulacion (AQUI VA LA LOGICA REAL)
-    setTimeout(() => {
-      if (email === "admin@bionutrex.com" && password === "admin123") {
-        toast.success("Bienvenido!");
-        localStorage.setItem("isAuthenticated", "true");
+    try {
+      const result = await login(email, password);
+      
+      if (result.success) {
+        toast.success("¡Bienvenido al panel de administración!");
         navigate("/admin");
       } else {
-        toast.error("Credenciales Incorrectas");
+        toast.error(result.error || "Credenciales incorrectas");
       }
+    } catch (error) {
+      console.error('Login error:', error);
+      toast.error("Error de conexión. Verifica que el servidor esté ejecutándose.");
+    } finally {
       setIsLoading(false);
-    }, 1000);
+    }
   };
 
   return (
