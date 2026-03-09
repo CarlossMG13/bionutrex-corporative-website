@@ -12,12 +12,18 @@ import { HomeDataProvider } from "@/contexts/HomeDataContext";
 // Pages
 import Home from "@/pages/Home";
 import Login from "@/pages/admin/Login";
+import About from "./pages/About";
+
+// Admin pages
 import Dashboard from "@/pages/admin/Dashboard";
 import HomeEditor from "@/pages/admin/HomeEditor";
 import ProductCatalog from "@/pages/admin/ProductCatalog";
 import ClinicalData from "@/pages/admin/ClinicalData";
 import MediaLibrary from "@/pages/admin/MediaLibrary";
 import UserManagement from "@/pages/admin/UserManagement";
+import GlobalEditor from "@/pages/admin/GlobalEditor";
+import AboutEditor from "./pages/admin/AboutEditor";
+
 /* import About from "@/pages/About"; */
 
 // Components
@@ -30,13 +36,23 @@ function AppContent() {
   const location = useLocation();
   const isAdminRoute = location.pathname.startsWith("/admin");
 
+  // Lenis smooth scroll solo en rutas públicas
+  useLenis(!isAdminRoute);
+
   return (
     <div className="min-h-screen bg-[#EEEEEE] flex flex-col">
       {!isAdminRoute && <Navbar />}
-      <main className="grow">
+      <main
+        className={
+          isAdminRoute
+            ? "w-full"
+            : "home-page w-full overflow-x-hidden min-h-screen pt-20"
+        }
+      >
         <Routes>
           {/* Rutas publicas */}
           <Route path="/" element={<Home />} />
+          <Route path="/about" element={<About />} />
 
           {/* Ruta de Login (sin layout de admin) */}
           <Route path="/admin/login" element={<Login />} />
@@ -57,6 +73,8 @@ function AppContent() {
             <Route path="clinical" element={<ClinicalData />} />
             <Route path="media" element={<MediaLibrary />} />
             <Route path="users" element={<UserManagement />} />
+            <Route path="global" element={<GlobalEditor />} />
+            <Route path="about" element={<AboutEditor />} />
           </Route>
         </Routes>
       </main>
@@ -67,7 +85,6 @@ function AppContent() {
 }
 
 function App() {
-  useLenis();
   return (
     <Router>
       <HomeDataProvider>

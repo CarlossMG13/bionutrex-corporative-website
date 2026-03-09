@@ -1,7 +1,8 @@
 {
   "permissions": {
     "allow": [
-      "Bash(dir:*)"
+      "Bash(dir:*)",
+      "Bash(node -e \"const p = require\\(''c:/Users/celso/Documents/webiste-bionutrex/bionutrex-frontend/node_modules/swiper/package.json''\\); console.log\\(JSON.stringify\\(p.exports[''.''], null, 2\\)\\)\")"
     ]
   }
 }

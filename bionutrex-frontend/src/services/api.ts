@@ -1,5 +1,11 @@
 import axios from "axios";
-import type { Slider, HomeSection, BlogPost, AuthResponse } from "@/types";
+import type {
+  Slider,
+  HomeSection,
+  BlogPost,
+  AuthResponse,
+  Product,
+} from "@/types";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001/api";
 
@@ -97,6 +103,21 @@ export const blogPostAPI = {
     }),
 
   delete: (id: string) => api.delete(`/blog-posts/${id}`),
+};
+
+export const productAPI = {
+  getAll: () => api.get<Product[]>("/products"),
+  getAllAdmin: () => api.get<Product[]>("/products/admin/all"),
+  getFeatured: () => api.get<Product[]>("/products/featured"),
+  create: (formData: FormData) =>
+    api.post<Product>("/products", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    }),
+  update: (id: string, formData: FormData) =>
+    api.put<Product>(`/products/${id}`, formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    }),
+  delete: (id: string) => api.delete(`/products/${id}`),
 };
 
 export default api;

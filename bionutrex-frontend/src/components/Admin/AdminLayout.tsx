@@ -11,7 +11,6 @@ function AdminLayoutContent() {
   // Configuración de dimensiones por dispositivo
   const deviceStyles = {
     desktop: {
-      width: "100%",
       maxWidth: "none",
       margin: "0",
       border: "none",
@@ -48,8 +47,8 @@ function AdminLayoutContent() {
         <AdminTopbar />
 
         {/* Area de contenido central (preview) */}
-        <main 
-          className={`flex-1 overflow-y-auto ${
+        <main
+          className={`flex-1 overflow-y-auto overflow-x-hidden ${
             isPreviewMode ? "p-6 bg-gray-200" : "p-6"
           }`}
         >

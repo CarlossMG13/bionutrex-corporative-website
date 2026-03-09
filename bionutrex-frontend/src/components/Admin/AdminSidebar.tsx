@@ -2,45 +2,42 @@ import { Link, useLocation } from "react-router-dom";
 import {
   LayoutDashboard,
   Home,
-  Package,
   FlaskConical,
   Image,
   Users,
   ExternalLink,
-  Icon,
+  Navigation2,
+  Package,
+  ShoppingCart,
+  UserRound,
+  UsersRound,
 } from "lucide-react";
 
-// Items del menu
-const menuItems = [
+const menuGroups = [
   {
-    label: "Dashboard",
-    path: "/admin/dashboard",
-    icon: LayoutDashboard,
+    label: "PÁGINAS",
+    items: [
+      { label: "Dashboard", path: "/admin/dashboard", icon: LayoutDashboard },
+      { label: "Home Editor", path: "/admin/home", icon: Home },
+      { label: "About Editor", path: "/admin/about", icon: UsersRound },
+      { label: "Datos Clínicos", path: "/admin/clinical", icon: FlaskConical },
+    ],
   },
   {
-    label: "Home Page Editor",
-    path: "/admin/home",
-    icon: Home,
+    label: "GLOBAL",
+    items: [
+      { label: "Navbar & Footer", path: "/admin/global", icon: Navigation2 },
+      { label: "Media Library", path: "/admin/media", icon: Image },
+      { label: "Usuarios", path: "/admin/users", icon: Users },
+    ],
   },
   {
-    label: "Product Catalog",
-    path: "/admin/products",
-    icon: Package,
-  },
-  {
-    label: "Clinical Data",
-    path: "/admin/clinical",
-    icon: FlaskConical,
-  },
-  {
-    label: "Media Library",
-    path: "/admin/media",
-    icon: Image,
-  },
-  {
-    label: "User Management",
-    path: "/admin/users",
-    icon: Users,
+    label: "TIENDA",
+    items: [
+      { label: "Catálogo", path: "/admin/products", icon: Package },
+      { label: "Movimientos", path: "/admin/orders", icon: ShoppingCart },
+      { label: "Clientes", path: "/admin/customers", icon: UserRound },
+    ],
   },
 ];
 
@@ -63,31 +60,38 @@ export default function AdminSidebar() {
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
-        {menuItems.map((item) => {
-          const isActive = location.pathname === item.path;
-          const Icon = item.icon;
-
-          return (
-            <Link
-              key={item.path}
-              to={item.path}
-              className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-300 ${
-                isActive
-                  ? "bg-[#0d40a5] text-white"
-                  : "text-white/70 hover:bg-white/10 hover:text-white"
-              }`}
-            >
-              <Icon size={20} />
-              <span className="text-sm font-medium">{item.label}</span>
-            </Link>
-          );
-        })}
+      <nav className="flex-1 p-4 overflow-y-auto space-y-5">
+        {menuGroups.map((group) => (
+          <div key={group.label}>
+            <p className="text-[10px] font-extrabold tracking-[0.2em] text-white/30 uppercase px-4 mb-2">
+              {group.label}
+            </p>
+            <div className="space-y-1">
+              {group.items.map((item) => {
+                const isActive = location.pathname === item.path;
+                const Icon = item.icon;
+                return (
+                  <Link
+                    key={item.path}
+                    to={item.path}
+                    className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-300 ${
+                      isActive
+                        ? "bg-[#0d40a5] text-white"
+                        : "text-white/70 hover:bg-white/10 hover:text-white"
+                    }`}
+                  >
+                    <Icon size={20} />
+                    <span className="text-sm font-medium">{item.label}</span>
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        ))}
       </nav>
 
       {/* User Section */}
       <div className="p-4 border-t border-white/10">
-        {/* Usuario logueado */}
         <div className="flex items-center gap-3 mb-4 px-2">
           <div className="w-10 h-10 bg-gray-500 rounded-full overflow-hidden">
             <img src="" alt="User" className="w-full h-full object-cover" />
@@ -97,8 +101,6 @@ export default function AdminSidebar() {
             <p className="text-xs text-white/50">CEO Bionutrex</p>
           </div>
         </div>
-
-        {/* Boton Ver sitio */}
         <Link
           to="/"
           target="_blank"

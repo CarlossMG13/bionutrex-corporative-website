@@ -22,38 +22,55 @@ model Admin {
 }
 
 model Slider {
-  id          String   @id @default(cuid())
-  title       String
-  subtitle    String?
-  description String?
-  imageUrl    String
-  buttonText  String?
-  buttonLink  String?
-  order       Int      @default(0)
-  active      Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id            String   @id @default(cuid())
+  title         String
+  titleSegments String?  @db.Text
+  subtitle      String?
+  description   String?
+  label         String?
+  mediaType     String   @default("image")
+  imageUrl      String
+  videoUrl      String?
+  videoMuted    Boolean  @default(true)
+  accentColor   String   @default("#00e5ff")
+  buttonText    String?
+  buttonLink    String?
+  button2Text   String?
+  button2Link   String?
+  stats         String?  @db.Text
+  order         Int      @default(0)
+  active        Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
   @@map("sliders")
 }
 
+
 model HomeSection {
-  id         String   @id @default(cuid())
-  sectionKey String   @unique
-  title      String
-  subtitle   String?
-  content    String   @db.Text
-  imageUrl   String?
-  buttonText String?
-  buttonLink String?
-  active     Boolean  @default(true)
-  order      Int      @default(0)
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-  images     SectionImage[]
+  id            String   @id @default(cuid())
+  sectionKey    String   @unique
+  title         String
+  subtitle      String?
+  content       String   @db.Text
+  imageUrl      String?
+  buttonText    String?
+  buttonLink    String?
+  active        Boolean  @default(true)
+  order         Int      @default(0)
+  // Campos para secciones con hero (about, etc.)
+  titleSegments String?  @db.Text
+  accentColor   String?
+  mediaType     String   @default("image")
+  videoUrl      String?
+  videoMuted    Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  images        SectionImage[]
 
   @@map("home_sections")
 }
+
 
 model SectionImage {
   id        String      @id @default(cuid())
@@ -84,4 +101,22 @@ model BlogPost {
   publishedAt DateTime?
 
   @@map("blog_posts")
+}
+
+model Product {
+  id            String   @id @default(cuid())
+  name          String
+  price         Float
+  imageUrl      String
+  badge         String?
+  badgeColor    String?  @default("#0d40a5")
+  rating        Float    @default(5.0)
+  reviewCount   Int      @default(0)
+  featured      Boolean  @default(false)
+  featuredOrder Int      @default(0)
+  active        Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@map("products")
 }

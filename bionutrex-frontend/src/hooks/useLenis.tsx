@@ -1,8 +1,10 @@
 import { useEffect } from "react";
 import Lenis from "lenis";
 
-export function useLenis() {
+export function useLenis(enabled = true) {
   useEffect(() => {
+    if (!enabled) return;
+
     const lenis = new Lenis({
       duration: 1.2, // Duracion de la animacion
       easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)), // Easing function
@@ -21,5 +23,5 @@ export function useLenis() {
     return () => {
       lenis.destroy();
     };
-  }, []);
+  }, [enabled]);
 }

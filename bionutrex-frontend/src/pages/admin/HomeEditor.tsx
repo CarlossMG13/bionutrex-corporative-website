@@ -1,31 +1,33 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   Eye,
-  Upload,
   Plus,
   Trash2,
   Edit,
   Image as ImageIcon,
   Layout,
+  Package,
 } from "lucide-react";
 import { useAdmin } from "@/contexts/AdminContext";
 import { useHomeDataRefresh } from "@/contexts/HomeDataContext";
-import { homeSectionAPI, sliderAPI } from "@/services/api";
-import type { HomeSection, Slider } from "@/types";
+import { homeSectionAPI, sliderAPI, productAPI } from "@/services/api";
+import type { HomeSection, Slider, Product } from "@/types";
 import { SectionEditModal } from "@/components/Admin/SectionEditModal";
 import LivePreview from "@/components/Admin/LivePreview";
+import SliderEditModal from "@/components/Admin/SliderEditModal";
+import ProductEditModal from "@/components/Admin/ProductEditModal";
 
 export default function HomeEditor() {
-  const { 
-    isPreviewMode, 
+  const {
+    isPreviewMode,
     setIsPreviewMode,
     previewDevice,
     setPreviewDevice,
-    addPendingChange, 
-    pendingChanges, 
-    hasUnsavedChanges 
+    addPendingChange,
+    pendingChanges,
+    hasUnsavedChanges,
   } = useAdmin();
-  
+
   // Usar el contexto de manera segura
   let triggerRefresh: (() => void) | null = null;
   let applyPendingChanges: ((changes: any[]) => void) | null = null;
@@ -34,57 +36,72 @@ export default function HomeEditor() {
     triggerRefresh = context.triggerRefresh;
     applyPendingChanges = context.applyPendingChanges;
   } catch (err) {
-    console.warn('useHomeDataRefresh context not available in HomeEditor');
+    console.warn("useHomeDataRefresh context not available in HomeEditor");
   }
-  
+
   const [sections, setSections] = useState<HomeSection[]>([]);
   const [sliders, setSliders] = useState<Slider[]>([]);
-  const [activeTab, setActiveTab] = useState<"sections" | "slider">("sections");
-  const [editingSection, setEditingSection] = useState<HomeSection | null>(null);
+  const [activeTab, setActiveTab] = useState<
+    "sections" | "slider" | "products"
+  >("sections");
+  const [editingSection, setEditingSection] = useState<HomeSection | null>(
+    null,
+  );
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [dataLoading, setDataLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [apiConnected, setApiConnected] = useState(false);
-  const [availableImages, setAvailableImages] = useState<{src: string, name: string, type: 'local' | 'upload'}[]>([]);
-  const [showImageGallery, setShowImageGallery] = useState(false);
-  const [sectionToDelete, setSectionToDelete] = useState<HomeSection | null>(null);
+  const [availableImages, setAvailableImages] = useState<
+    { src: string; name: string; type: "local" | "upload" }[]
+  >([]);
+  const [sectionToDelete, setSectionToDelete] = useState<HomeSection | null>(
+    null,
+  );
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [uploading, setUploading] = useState(false);
+  const [isSliderModalOpen, setIsSliderModalOpen] = useState(false);
+  const [editingSlider, setEditingSlider] = useState<Slider | null>(null);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [isProductModalOpen, setIsProductModalOpen] = useState(false);
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
 
   // Handlers para el Live Preview
   const handlePreviewClose = useCallback(() => {
     setIsPreviewMode(false);
   }, [setIsPreviewMode]);
-  
-  const handleDeviceChange = useCallback((device: 'mobile' | 'tablet' | 'desktop') => {
-    setPreviewDevice(device);
-  }, [setPreviewDevice]);
+
+  const handleDeviceChange = useCallback(
+    (device: "mobile" | "tablet" | "desktop") => {
+      setPreviewDevice(device);
+    },
+    [setPreviewDevice],
+  );
 
   // Función para cargar imágenes disponibles
   const loadAvailableImages = async () => {
-    const images: {src: string, name: string, type: 'local' | 'upload'}[] = [];
-    
+    const images: { src: string; name: string; type: "local" | "upload" }[] =
+      [];
+
     // Cargar imágenes locales desde public/images (accesibles directamente)
     const localImages = [
-      'heroSection-img.jpg',
-      'MethImage.jpg',
-      'img1-grid-product.jpg',
-      'img2-grid-product.jpg',
-      'img3-grid-product.jpg'
+      "heroSection-img.jpg",
+      "MethImage.jpg",
+      "img1-grid-product.jpg",
+      "img2-grid-product.jpg",
+      "img3-grid-product.jpg",
     ];
-    
+
     // Usar rutas de public que funcionen en Vite
-    localImages.forEach(img => {
+    localImages.forEach((img) => {
       images.push({
         src: `/images/${img}`,
         name: img,
-        type: 'local'
+        type: "local",
       });
     });
-    
+
     // Intentar cargar imágenes del backend uploads
     try {
-      const response = await fetch('http://localhost:3001/api/uploads/list');
+      const response = await fetch("http://localhost:3001/api/uploads/list");
       if (response.ok) {
         const uploadedFiles = await response.json();
         uploadedFiles.forEach((file: string) => {
@@ -92,15 +109,15 @@ export default function HomeEditor() {
             images.push({
               src: `http://localhost:3001/uploads/${file}`,
               name: file,
-              type: 'upload'
+              type: "upload",
             });
           }
         });
       }
     } catch (err) {
-      console.warn('No se pudieron cargar imágenes del servidor:', err);
+      console.warn("No se pudieron cargar imágenes del servidor:", err);
     }
-    
+
     setAvailableImages(images);
   };
 
@@ -109,7 +126,7 @@ export default function HomeEditor() {
     const loadData = async () => {
       try {
         setDataLoading(true);
-        
+
         // Datos de ejemplo como fallback
         const mockSections: HomeSection[] = [
           {
@@ -120,18 +137,20 @@ export default function HomeEditor() {
             content: "Ciencia Avanzada. Pureza Natural.",
             active: true,
             order: 1,
-            images: [{
-              id: "hero-img-1",
-              url: "/images/heroSection-img.jpg",
-              alt: "Imagen de fondo hero",
-              caption: "",
-              order: 0
-            }],
+            images: [
+              {
+                id: "hero-img-1",
+                url: "/images/heroSection-img.jpg",
+                alt: "Imagen de fondo hero",
+                caption: "",
+                order: 0,
+              },
+            ],
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
           },
           {
-            id: "2", 
+            id: "2",
             sectionKey: "quality",
             title: "Sección Calidad",
             content: "Comprometidos con la excelencia en cada producto",
@@ -142,25 +161,27 @@ export default function HomeEditor() {
           },
           {
             id: "3",
-            sectionKey: "methodology", 
+            sectionKey: "methodology",
             title: "Metodología",
             content: "Procesos respaldados por investigación científica",
             active: true,
             order: 3,
-            images: [{
-              id: "methodology-img-1",
-              url: "https://lh3.googleusercontent.com/aida-public/AB6AXuBK9y955Ko1Nefm9TJwmPBX1KfmDtPe-CJnpqoRL600xNDWCsT3Sez7XbBaq2y1U0EMgEQT5qCjcJsDuhkpg-suJSmnyonuBaOK64xYvKr2SoJbqQh-Xa7H2UDdu0TukJoXh2L9W1wUZJzwjW1QutdpZLGvekN52aPk2MllgWy9T3xOD6kTIqXj4tMjbduDsgi8ZAexkyB6wKwkaZELHrD491RAbgsM5T8jOvxeUzad7YfyhZXIUFnbjamttApQAYxKPEvpAJanLEE",
-              alt: "Científico farmacéutico trabajando en sala limpia",
-              caption: "",
-              order: 0
-            }],
+            images: [
+              {
+                id: "methodology-img-1",
+                url: "https://lh3.googleusercontent.com/aida-public/AB6AXuBK9y955Ko1Nefm9TJwmPBX1KfmDtPe-CJnpqoRL600xNDWCsT3Sez7XbBaq2y1U0EMgEQT5qCjcJsDuhkpg-suJSmnyonuBaOK64xYvKr2SoJbqQh-Xa7H2UDdu0TukJoXh2L9W1wUZJzwjW1QutdpZLGvekN52aPk2MllgWy9T3xOD6kTIqXj4tMjbduDsgi8ZAexkyB6wKwkaZELHrD491RAbgsM5T8jOvxeUzad7YfyhZXIUFnbjamttApQAYxKPEvpAJanLEE",
+                alt: "Científico farmacéutico trabajando en sala limpia",
+                caption: "",
+                order: 0,
+              },
+            ],
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
           },
           {
             id: "4",
             sectionKey: "blog",
-            title: "Sección Blog", 
+            title: "Sección Blog",
             content: "Últimas noticias y artículos científicos",
             active: true,
             order: 4,
@@ -170,22 +191,22 @@ export default function HomeEditor() {
                 url: "/images/img1-grid-product.jpg",
                 alt: "Suplementos de salud celular",
                 caption: "",
-                order: 0
+                order: 0,
               },
               {
-                id: "blog-img-2", 
+                id: "blog-img-2",
                 url: "/images/img2-grid-product.jpg",
                 alt: "Productos de mejora cognitiva",
                 caption: "",
-                order: 1
+                order: 1,
               },
               {
                 id: "blog-img-3",
-                url: "/images/img3-grid-product.jpg", 
+                url: "/images/img3-grid-product.jpg",
                 alt: "Fórmulas de apoyo metabólico",
                 caption: "",
-                order: 2
-              }
+                order: 2,
+              },
             ],
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
@@ -198,27 +219,31 @@ export default function HomeEditor() {
             title: "Innovación Científica",
             subtitle: "Laboratorios de última generación",
             imageUrl: "/api/placeholder/800/600",
+            mediaType: "image",
             active: true,
             order: 1,
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
           },
           {
-            id: "2", 
+            id: "2",
             title: "Productos Naturales",
             subtitle: "100% ingredientes naturales",
             imageUrl: "/api/placeholder/800/600",
+            mediaType: "image",
             active: true,
             order: 2,
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
           },
         ];
-        
+
         // Verificar autenticación primero
-        const token = localStorage.getItem('token');
+        const token = localStorage.getItem("token");
         if (!token) {
-          console.warn("No hay token de autenticación - usando datos de ejemplo");
+          console.warn(
+            "No hay token de autenticación - usando datos de ejemplo",
+          );
           setSections(mockSections);
           setSliders(mockSliders);
           setApiConnected(false);
@@ -230,7 +255,7 @@ export default function HomeEditor() {
         // Probar conectividad con endpoints de admin primero
         let isApiAvailable = false;
         let adminSections: HomeSection[] = [];
-        
+
         try {
           const adminResponse = await homeSectionAPI.getAllAdmin();
           isApiAvailable = true;
@@ -238,7 +263,7 @@ export default function HomeEditor() {
           console.log("✅ API de admin disponible - datos reales cargados");
         } catch (adminError) {
           console.warn("❌ Endpoints de admin fallan:", adminError);
-          
+
           // Fallback a endpoints públicos
           try {
             const publicResponse = await homeSectionAPI.getAll();
@@ -251,33 +276,45 @@ export default function HomeEditor() {
           }
         }
 
-        if (isApiAvailable && adminSections.length > 0) {
-          // API disponible y con datos reales
-          setApiConnected(true);
-          setSections(adminSections);
-          
-          // Intentar cargar sliders
+        if (isApiAvailable) {
+          // Siempre intentar cargar sliders reales, sin importar si hay secciones
+          let realSliders: Slider[] = [];
           try {
-            const slidersResponse = await sliderAPI.getAll();
-            setSliders(slidersResponse.data || []);
+            const slidersResponse = await sliderAPI.getAllAdmin();
+            realSliders = slidersResponse.data || [];
           } catch (slidersError) {
             console.warn("Sliders no disponibles:", slidersError);
-            setSliders([]);
           }
-          
-          setError("Datos cargados correctamente.");
-          setTimeout(() => setError(null), 3000);
-          
-        } else if (isApiAvailable && adminSections.length === 0) {
-          // API disponible pero base de datos vacía
-          setSections(mockSections);
-          setSliders(mockSliders);
-          setApiConnected(false);
-          setError("⚠️ Base de datos vacía - usando datos de ejemplo");
-          setTimeout(() => setError(null), 5000);
-          
+
+          let realProducts: Product[] = [];
+          try {
+            const productsResponse = await productAPI.getAllAdmin();
+            realProducts = productsResponse.data || [];
+          } catch {
+            console.warn("Productos no disponibles");
+          }
+
+          if (adminSections.length > 0) {
+            setApiConnected(true);
+            setSections(adminSections);
+            setSliders(realSliders);
+            setProducts(realProducts);
+            setError("Datos cargados correctamente.");
+            setTimeout(() => setError(null), 3000);
+          } else {
+            // Secciones vacías — mostrar sliders reales si los hay
+            setSections(mockSections);
+            setSliders(realSliders.length > 0 ? realSliders : mockSliders);
+            setProducts(realProducts);
+            setApiConnected(false);
+            setError(
+              realSliders.length > 0
+                ? "⚠️ Secciones de ejemplo (sliders reales cargados)"
+                : "⚠️ Base de datos vacía - usando datos de ejemplo",
+            );
+            setTimeout(() => setError(null), 5000);
+          }
         } else {
-          // API no disponible completamente
           setSections(mockSections);
           setSliders(mockSliders);
           setApiConnected(false);
@@ -286,7 +323,7 @@ export default function HomeEditor() {
         }
       } catch (err) {
         console.error("Error loading data:", err);
-        
+
         // Datos de ejemplo en caso de error total
         const fallbackSections: HomeSection[] = [
           {
@@ -296,13 +333,15 @@ export default function HomeEditor() {
             content: "Ciencia Avanzada. Pureza Natural.",
             active: true,
             order: 1,
-            images: [{
-              id: "hero-img-1",
-              url: "/images/heroSection-img.jpg",
-              alt: "Imagen de fondo hero",
-              caption: "",
-              order: 0
-            }],
+            images: [
+              {
+                id: "hero-img-1",
+                url: "/images/heroSection-img.jpg",
+                alt: "Imagen de fondo hero",
+                caption: "",
+                order: 0,
+              },
+            ],
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
           },
@@ -313,13 +352,14 @@ export default function HomeEditor() {
             id: "1",
             title: "Imagen de ejemplo",
             imageUrl: "/api/placeholder/800/600",
+            mediaType: "image",
             active: true,
             order: 1,
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
           },
         ];
-        
+
         // En caso de error, usar datos mock
         setSections(fallbackSections);
         setSliders(fallbackSliders);
@@ -355,16 +395,18 @@ export default function HomeEditor() {
     return (
       <div className="p-6">
         <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-          <h3 className="text-lg font-semibold text-red-800 mb-2">Error de Conexión</h3>
+          <h3 className="text-lg font-semibold text-red-800 mb-2">
+            Error de Conexión
+          </h3>
           <p className="text-red-600 mb-4">{error}</p>
           <div className="flex gap-3">
-            <button 
+            <button
               onClick={() => window.location.reload()}
               className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
             >
               Reintentar
             </button>
-            <button 
+            <button
               onClick={() => {
                 // Cargar con datos mock
                 const fallbackSections: HomeSection[] = [
@@ -380,7 +422,7 @@ export default function HomeEditor() {
                     updatedAt: new Date().toISOString(),
                   },
                   {
-                    id: "2", 
+                    id: "2",
                     sectionKey: "quality",
                     title: "Sección Calidad",
                     content: "Comprometidos con la excelencia en cada producto",
@@ -391,9 +433,10 @@ export default function HomeEditor() {
                   },
                   {
                     id: "3",
-                    sectionKey: "methodology", 
+                    sectionKey: "methodology",
                     title: "Metodología",
-                    content: "Procesos respaldados por investigación científica",
+                    content:
+                      "Procesos respaldados por investigación científica",
                     active: true,
                     order: 3,
                     createdAt: new Date().toISOString(),
@@ -402,7 +445,7 @@ export default function HomeEditor() {
                   {
                     id: "4",
                     sectionKey: "blog",
-                    title: "Sección Blog", 
+                    title: "Sección Blog",
                     content: "Últimas noticias y artículos científicos",
                     active: true,
                     order: 4,
@@ -417,16 +460,18 @@ export default function HomeEditor() {
                     title: "Innovación Científica",
                     subtitle: "Laboratorios de última generación",
                     imageUrl: "/api/placeholder/800/600",
+                    mediaType: "image",
                     active: true,
                     order: 1,
                     createdAt: new Date().toISOString(),
                     updatedAt: new Date().toISOString(),
                   },
                   {
-                    id: "2", 
+                    id: "2",
                     title: "Productos Naturales",
                     subtitle: "100% ingredientes naturales",
                     imageUrl: "/api/placeholder/800/600",
+                    mediaType: "image",
                     active: true,
                     order: 2,
                     createdAt: new Date().toISOString(),
@@ -458,24 +503,24 @@ export default function HomeEditor() {
       // Agregar el cambio a la cola de cambios pendientes
       addPendingChange({
         id: updatedSection.id,
-        type: 'section',
-        action: 'update',
-        data: updatedSection
+        type: "section",
+        action: "update",
+        data: updatedSection,
       });
-      
+
       // Actualizar estado local inmediatamente para feedback visual
-      setSections(sections.map(s => 
-        s.id === updatedSection.id ? updatedSection : s
-      ));
-      
+      setSections(
+        sections.map((s) => (s.id === updatedSection.id ? updatedSection : s)),
+      );
+
       setEditingSection(null);
       setIsModalOpen(false);
-      
+
       // Disparar actualización de la página Home
       if (triggerRefresh) {
         triggerRefresh();
       }
-      
+
       setError("✅ Cambios agregados a cola de publicación");
       setTimeout(() => setError(null), 3000);
     } catch (err) {
@@ -492,7 +537,7 @@ export default function HomeEditor() {
 
   const handleToggleVisibility = async (id: string) => {
     try {
-      const section = sections.find(s => s.id === id);
+      const section = sections.find((s) => s.id === id);
       if (!section) return;
 
       const updatedSection = { ...section, active: !section.active };
@@ -500,25 +545,22 @@ export default function HomeEditor() {
       // Agregar el cambio a la cola de cambios pendientes
       addPendingChange({
         id: updatedSection.id,
-        type: 'section',
-        action: 'visibility',
-        data: updatedSection
+        type: "section",
+        action: "visibility",
+        data: updatedSection,
       });
-      
+
       // Actualizar estado local SIEMPRE para feedback visual inmediato
-      setSections(sections.map(s => 
-        s.id === id ? updatedSection : s
-      ));
-      
+      setSections(sections.map((s) => (s.id === id ? updatedSection : s)));
+
       // IMPORTANTE: Disparar actualización de la página Home
       if (triggerRefresh) {
         console.log("🔄 Refrescando datos del Home...");
         triggerRefresh();
       }
-      
+
       setError("✅ Cambio de visibilidad agregado a cola de publicación");
       setTimeout(() => setError(null), 3000);
-      
     } catch (err) {
       console.error("Error toggling visibility:", err);
       setError("❌ Error al cambiar la visibilidad");
@@ -527,33 +569,33 @@ export default function HomeEditor() {
   };
 
   const handleSectionDelete = async (id: string) => {
-    const section = sections.find(s => s.id === id);
+    const section = sections.find((s) => s.id === id);
     if (!section) return;
-    
+
     setSectionToDelete(section);
     setShowDeleteModal(true);
   };
 
   const confirmSectionDelete = async () => {
     if (!sectionToDelete) return;
-    
+
     try {
       // Agregar el cambio a la cola de cambios pendientes
       addPendingChange({
         id: sectionToDelete.id,
-        type: 'section',
-        action: 'delete',
-        data: sectionToDelete
+        type: "section",
+        action: "delete",
+        data: sectionToDelete,
       });
-      
+
       // Actualizar estado local para feedback visual
-      setSections(sections.filter(s => s.id !== sectionToDelete.id));
-      
+      setSections(sections.filter((s) => s.id !== sectionToDelete.id));
+
       // Disparar actualización de la página Home
       if (triggerRefresh) {
         triggerRefresh();
       }
-      
+
       setError("✅ Sección marcada para eliminación");
       setTimeout(() => setError(null), 3000);
     } catch (err) {
@@ -571,61 +613,129 @@ export default function HomeEditor() {
     setSectionToDelete(null);
   };
 
+  // ---- Handlers de Slider ----
+  const handleSliderEdit = (slider: Slider) => {
+    setEditingSlider(slider);
+    setIsSliderModalOpen(true);
+  };
+
+  const handleSliderDelete = async (id: string) => {
+    if (!confirm("¿Estás seguro de que quieres eliminar este slider?")) return;
+    try {
+      await sliderAPI.delete(id);
+      setSliders((prev) => prev.filter((s) => s.id !== id));
+      if (triggerRefresh) triggerRefresh();
+      setError("✅ Slider eliminado");
+      setTimeout(() => setError(null), 3000);
+    } catch (err: unknown) {
+      const msg =
+        err instanceof Object && "response" in err
+          ? (err as { response?: { data?: { error?: string } } }).response?.data
+              ?.error
+          : undefined;
+      setError(`❌ ${msg ?? "Error al eliminar el slider"}`);
+      setTimeout(() => setError(null), 4000);
+    }
+  };
+
+  const handleSliderSave = (savedSlider: Slider) => {
+    if (editingSlider) {
+      setSliders((prev) =>
+        prev.map((s) => (s.id === savedSlider.id ? savedSlider : s)),
+      );
+    } else {
+      setSliders((prev) => [...prev, savedSlider]);
+    }
+    setIsSliderModalOpen(false);
+    setEditingSlider(null);
+    if (triggerRefresh) triggerRefresh();
+    setError("✅ Slider guardado correctamente");
+    setTimeout(() => setError(null), 3000);
+  };
+
+  const handleProductEdit = (product: Product) => {
+    setEditingProduct(product);
+    setIsProductModalOpen(true);
+  };
+
+  const handleProductDelete = async (id: string) => {
+    if (!window.confirm("¿Eliminar este producto?")) return;
+    try {
+      await productAPI.delete(id);
+      setProducts((prev) => prev.filter((p) => p.id !== id));
+      setError("✅ Producto eliminado");
+      setTimeout(() => setError(null), 3000);
+    } catch {
+      setError("❌ Error al eliminar el producto");
+      setTimeout(() => setError(null), 3000);
+    }
+  };
+
+  const handleProductSave = (savedProduct: Product) => {
+    if (editingProduct) {
+      setProducts((prev) =>
+        prev.map((p) => (p.id === savedProduct.id ? savedProduct : p)),
+      );
+    } else {
+      setProducts((prev) => [...prev, savedProduct]);
+    }
+    setIsProductModalOpen(false);
+    setEditingProduct(null);
+    setError("✅ Producto guardado correctamente");
+    setTimeout(() => setError(null), 3000);
+  };
+
   // Función para manejar la subida de archivos
-  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
     const files = event.target.files;
     if (!files || files.length === 0) return;
 
     const file = files[0];
-    
-    // Validar que sea una imagen
-    if (!file.type.startsWith('image/')) {
-      setError('❌ Solo se pueden subir archivos de imagen');
-      setTimeout(() => setError(null), 3000);
-      return;
-    }
 
-    // Validar tamaño (máximo 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      setError('❌ El archivo es demasiado grande (máximo 5MB)');
+    // Validar que sea imagen o video
+    if (!file.type.startsWith("image/") && !file.type.startsWith("video/")) {
+      setError("❌ Solo se pueden subir archivos de imagen o video");
       setTimeout(() => setError(null), 3000);
       return;
     }
 
     try {
-      setUploading(true);
-      setError('📁 Subiendo imagen...');
-      
-      const formData = new FormData();
-      formData.append('image', file);
+      setError("📁 Subiendo archivo...");
 
-      const response = await fetch('http://localhost:3001/api/uploads', {
-        method: 'POST',
+      const formData = new FormData();
+      formData.append("image", file);
+
+      const response = await fetch("http://localhost:3001/api/uploads", {
+        method: "POST",
         body: formData,
       });
 
       if (response.ok) {
         const result = await response.json();
-        console.log('Upload successful:', result);
-        
+        console.log("Upload successful:", result);
+
         // Recargar las imágenes disponibles
         await loadAvailableImages();
-        
+
         setError(`✅ Imagen "${file.name}" subida correctamente`);
         setTimeout(() => setError(null), 3000);
-        
+
         // Limpiar el input
-        event.target.value = '';
+        event.target.value = "";
       } else {
-        const errorData = await response.json().catch(() => ({ error: 'Error desconocido' }));
-        throw new Error(errorData.error || 'Error al subir la imagen');
+        const errorData = await response
+          .json()
+          .catch(() => ({ error: "Error desconocido" }));
+        throw new Error(errorData.error || "Error al subir la imagen");
       }
     } catch (err) {
-      console.error('Error uploading file:', err);
-      setError(`❌ Error al subir la imagen: ${err instanceof Error ? err.message : 'Error desconocido'}`);
+      console.error("Error uploading file:", err);
+      setError(
+        `❌ Error al subir la imagen: ${err instanceof Error ? err.message : "Error desconocido"}`,
+      );
       setTimeout(() => setError(null), 5000);
-    } finally {
-      setUploading(false);
     }
   };
 
@@ -644,27 +754,32 @@ export default function HomeEditor() {
         {/* Header */}
         <div className="flex justify-between items-center mb-6">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Editor de Página Principal</h1>
+            <h1 className="text-3xl font-bold text-gray-900">
+              Editor de Página Principal
+            </h1>
             <p className="text-gray-600 mt-1">
               Gestiona el contenido y elementos de la página de inicio
             </p>
-            
+
             {/* Status indicator */}
             <div className="flex gap-3 mt-3">
-              <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium ${
-                apiConnected 
-                  ? 'bg-green-100 text-green-800' 
-                  : 'bg-yellow-100 text-yellow-800'
-              }`}>
-                <div className={`w-2 h-2 rounded-full ${
-                  apiConnected ? 'bg-green-500' : 'bg-yellow-500'
-                }`} />
-                {apiConnected 
-                  ? 'Conectado a la base de datos'
-                  : 'Modo sin conexión - datos de ejemplo'
-                }
+              <div
+                className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium ${
+                  apiConnected
+                    ? "bg-green-100 text-green-800"
+                    : "bg-yellow-100 text-yellow-800"
+                }`}
+              >
+                <div
+                  className={`w-2 h-2 rounded-full ${
+                    apiConnected ? "bg-green-500" : "bg-yellow-500"
+                  }`}
+                />
+                {apiConnected
+                  ? "Conectado a la base de datos"
+                  : "Modo sin conexión - datos de ejemplo"}
               </div>
-              
+
               {/* Indicador de cambios pendientes */}
               {hasUnsavedChanges && (
                 <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
@@ -674,7 +789,7 @@ export default function HomeEditor() {
               )}
             </div>
           </div>
-          
+
           {/* Actions */}
           <div className="flex items-center gap-3">
             <button
@@ -712,6 +827,17 @@ export default function HomeEditor() {
               <ImageIcon className="w-4 h-4 inline mr-2" />
               Slider de Imágenes
             </button>
+            <button
+              onClick={() => setActiveTab("products")}
+              className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                activeTab === "products"
+                  ? "border-[#0d40a5] text-[#0d40a5]"
+                  : "border-transparent text-gray-500 hover:text-gray-700"
+              }`}
+            >
+              <Package className="w-4 h-4 inline mr-2" />
+              Catálogo de Productos
+            </button>
           </nav>
         </div>
 
@@ -730,77 +856,92 @@ export default function HomeEditor() {
                   return a.title.localeCompare(b.title);
                 })
                 .map((section) => (
-                <div
-                  key={section.id}
-                  className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow"
-                >
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-2">
-                        <h3 className="text-lg font-semibold text-gray-900">
-                          {section.title}
-                        </h3>
-                        <span className={`px-2 py-1 text-xs rounded-full ${
-                          section.active 
-                            ? "bg-green-100 text-green-800" 
-                            : "bg-gray-100 text-gray-800"
-                        }`}>
-                          {section.active ? "Visible" : "Oculto"}
-                        </span>
-                        <span className="px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded-full">
-                          {section.sectionKey}
-                        </span>
+                  <div
+                    key={section.id}
+                    className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow"
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3 mb-2">
+                          <h3 className="text-lg font-semibold text-gray-900">
+                            {section.title}
+                          </h3>
+                          <span
+                            className={`px-2 py-1 text-xs rounded-full ${
+                              section.active
+                                ? "bg-green-100 text-green-800"
+                                : "bg-gray-100 text-gray-800"
+                            }`}
+                          >
+                            {section.active ? "Visible" : "Oculto"}
+                          </span>
+                          <span className="px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded-full">
+                            {{
+                              hero: "Hero",
+                              home_video_hero: "Video Hero",
+                              quality: "Best Sellers",
+                              methodology: "Categorías",
+                              blog: "Ciencia",
+                            }[section.sectionKey] ?? section.sectionKey}
+                          </span>
+                        </div>
+                        <p className="text-gray-600 text-sm">
+                          {section.content}
+                        </p>
+                        {section.subtitle && (
+                          <p className="text-gray-500 text-xs mt-1">
+                            {section.subtitle}
+                          </p>
+                        )}
                       </div>
-                      <p className="text-gray-600 text-sm">{section.content}</p>
-                      {section.subtitle && (
-                        <p className="text-gray-500 text-xs mt-1">{section.subtitle}</p>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-2 ml-4">
-                      <button
-                        onClick={() => handleToggleVisibility(section.id)}
-                        className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
-                        title={section.active ? "Ocultar" : "Mostrar"}
-                      >
-                        <Eye className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => handleSectionEdit(section)}
-                        className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                        title="Editar"
-                      >
-                        <Edit className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => handleSectionDelete(section.id)}
-                        className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                        title="Eliminar"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                      <div className="flex items-center gap-2 ml-4">
+                        <button
+                          onClick={() => handleToggleVisibility(section.id)}
+                          className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                          title={section.active ? "Ocultar" : "Mostrar"}
+                        >
+                          <Eye className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleSectionEdit(section)}
+                          className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                          title="Editar"
+                        >
+                          <Edit className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleSectionDelete(section.id)}
+                          className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                          title="Eliminar"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                ))}
             </div>
 
             {/* Add New Section */}
-            <button 
+            <button
               onClick={() => {
                 // TODO: Implementar creación de nueva sección
-                alert("Funcionalidad de crear nueva sección pendiente de implementar");
+                alert(
+                  "Funcionalidad de crear nueva sección pendiente de implementar",
+                );
               }}
               className="w-full border-2 border-dashed border-gray-300 rounded-lg p-6 text-gray-500 hover:border-[#0d40a5] hover:text-[#0d40a5] hover:bg-gray-50 transition-colors"
             >
               <Plus className="w-6 h-6 mx-auto mb-2" />
-              <span className="block text-sm font-medium">Agregar Nueva Sección</span>
+              <span className="block text-sm font-medium">
+                Agregar Nueva Sección
+              </span>
             </button>
           </div>
         )}
 
         {activeTab === "slider" && (
-          <div className="space-y-6">
-            {/* Slider Images */}
+          <div className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {sliders.map((slider) => (
                 <div
@@ -809,208 +950,178 @@ export default function HomeEditor() {
                 >
                   <div className="aspect-video bg-gray-200 relative">
                     <img
-                      src={slider.imageUrl}
+                      src={
+                        slider.imageUrl.startsWith("/uploads/")
+                          ? `http://localhost:3001${slider.imageUrl}`
+                          : slider.imageUrl
+                      }
                       alt={slider.title}
                       className="w-full h-full object-cover"
                     />
                     <div className="absolute top-2 right-2 flex gap-1">
-                      <button 
-                        onClick={() => {
-                          // TODO: Implementar edición de slider
-                          alert("Funcionalidad de editar slider pendiente de implementar");
-                        }}
+                      <button
+                        onClick={() => handleSliderEdit(slider)}
                         className="p-1.5 bg-white/80 backdrop-blur-sm rounded-lg hover:bg-white transition-colors"
+                        title="Editar"
                       >
                         <Edit className="w-3 h-3 text-gray-600" />
                       </button>
-                      <button 
-                        onClick={async () => {
-                          if (confirm("¿Estás seguro de que quieres eliminar este slider?")) {
-                            try {
-                              // Agregar el cambio a la cola de cambios pendientes
-                              addPendingChange({
-                                id: slider.id,
-                                type: 'slider',
-                                action: 'delete',
-                                data: slider
-                              });
-                              
-                              // Actualizar estado local para feedback visual
-                              setSliders(sliders.filter(s => s.id !== slider.id));
-                              
-                              // Disparar actualización de la página Home
-                              if (triggerRefresh) {
-                                triggerRefresh();
-                              }
-                              
-                              setError("✅ Slider marcado para eliminación");
-                              setTimeout(() => setError(null), 3000);
-                            } catch (err) {
-                              console.error("Error deleting slider:", err);
-                              setError("❌ Error al eliminar el slider");
-                              setTimeout(() => setError(null), 3000);
-                            }
-                          }
-                        }}
+                      <button
+                        onClick={() => handleSliderDelete(slider.id)}
                         className="p-1.5 bg-white/80 backdrop-blur-sm rounded-lg hover:bg-white transition-colors"
+                        title="Eliminar"
                       >
                         <Trash2 className="w-3 h-3 text-red-600" />
                       </button>
                     </div>
                     {!slider.active && (
-                      <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-                        <span className="text-white text-sm font-medium">Oculto</span>
+                      <div className="absolute inset-0 bg-black/50 flex items-center justify-center pointer-events-none">
+                        <span className="text-white text-sm font-medium">
+                          Oculto
+                        </span>
                       </div>
                     )}
                   </div>
+
                   <div className="p-4">
-                    <h4 className="font-medium text-gray-900 mb-1">
-                      {slider.title}
-                    </h4>
-                    {slider.subtitle && (
-                      <p className="text-sm text-gray-600">{slider.subtitle}</p>
-                    )}
-                    <div className="flex items-center gap-2 mt-2">
-                      <span className={`px-2 py-1 text-xs rounded-full ${
-                        slider.active 
-                          ? "bg-green-100 text-green-800" 
-                          : "bg-gray-100 text-gray-800"
-                      }`}>
-                        {slider.active ? "Visible" : "Oculto"}
-                      </span>
+                    <div className="flex items-center gap-2 mb-1">
+                      <h4 className="font-medium text-gray-900">
+                        {slider.title}
+                      </h4>
+                      {slider.accentColor && (
+                        <div
+                          className="w-3 h-3 rounded-full border border-gray-200 flex-shrink-0"
+                          style={{ backgroundColor: slider.accentColor }}
+                        />
+                      )}
                     </div>
+                    {slider.label && (
+                      <p className="text-xs text-gray-500 mb-2">
+                        {slider.label}
+                      </p>
+                    )}
+                    <span
+                      className={`px-2 py-1 text-xs rounded-full ${
+                        slider.active
+                          ? "bg-green-100 text-green-800"
+                          : "bg-gray-100 text-gray-800"
+                      }`}
+                    >
+                      {slider.active ? "Visible" : "Oculto"}
+                    </span>
                   </div>
                 </div>
               ))}
             </div>
 
-            {/* Add New Image */}
-            <div className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* Botón para subir nueva imagen */}
-                <div className="relative">
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleFileUpload}
-                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                    disabled={uploading}
-                  />
-                  <button 
-                    className={`w-full border-2 border-dashed border-gray-300 rounded-lg p-8 text-gray-500 hover:border-[#0d40a5] hover:text-[#0d40a5] hover:bg-gray-50 transition-colors ${uploading ? 'opacity-50 cursor-not-allowed' : ''}`}
-                    disabled={uploading}
-                  >
-                    <Upload className="w-8 h-8 mx-auto mb-3" />
-                    <span className="block text-sm font-medium mb-1">
-                      {uploading ? 'Subiendo...' : 'Subir Nueva Imagen'}
-                    </span>
-                    <span className="block text-xs text-gray-400">
-                      {uploading ? 'Por favor espera...' : 'Arrastra o haz clic para seleccionar (máx. 5MB)'}
-                    </span>
-                  </button>
-                </div>
+            <button
+              onClick={() => {
+                setEditingSlider(null);
+                setIsSliderModalOpen(true);
+              }}
+              className="w-full border-2 border-dashed border-gray-300 rounded-lg p-6 text-gray-500 hover:border-[#0d40a5] hover:text-[#0d40a5] hover:bg-gray-50 transition-colors"
+            >
+              <Plus className="w-6 h-6 mx-auto mb-2" />
+              <span className="block text-sm font-medium">Nuevo Slider</span>
+            </button>
+          </div>
+        )}
 
-                {/* Botón para agregar desde galería */}
-                <button 
-                  onClick={() => setShowImageGallery(!showImageGallery)}
-                  className="w-full border-2 border-dashed border-gray-300 rounded-lg p-8 text-gray-500 hover:border-[#0d40a5] hover:text-[#0d40a5] hover:bg-gray-50 transition-colors"
-                >
-                  <ImageIcon className="w-8 h-8 mx-auto mb-3" />
-                  <span className="block text-sm font-medium mb-1">Agregar desde Galería</span>
-                  <span className="block text-xs text-gray-400">Selecciona desde imágenes disponibles</span>
-                </button>
-              </div>
-              
-              {/* Galería de imágenes */}
-              {showImageGallery && (
-                <div className="bg-white border border-gray-200 rounded-lg p-4">
-                  <h4 className="font-medium text-gray-900 mb-3">Imágenes Disponibles</h4>
-                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                    {availableImages.map((image, index) => (
-                      <div
-                        key={`${image.type}-${index}`}
-                        className="relative group cursor-pointer border border-gray-200 rounded-lg overflow-hidden hover:border-[#0d40a5] hover:shadow-md transition-all"
-                        onClick={async () => {
-                          try {
-                            const newSlider: Slider = {
-                              id: `temp-${Date.now()}`,
-                              title: `Imagen ${sliders.length + 1}`,
-                              subtitle: `Desde ${image.type === 'local' ? 'assets' : 'uploads'}`,
-                              imageUrl: image.src,
-                              active: true,
-                              order: sliders.length + 1,
-                              createdAt: new Date().toISOString(),
-                              updatedAt: new Date().toISOString(),
-                            };
-                            
-                            // Agregar el cambio a la cola de cambios pendientes
-                            addPendingChange({
-                              id: newSlider.id,
-                              type: 'slider',
-                              action: 'create',
-                              data: newSlider
-                            });
-                            
-                            // Actualizar estado local para feedback visual
-                            setSliders([...sliders, newSlider]);
-                            
-                            // Disparar actualización de la página Home
-                            if (triggerRefresh) {
-                              triggerRefresh();
-                            }
-                            
-                            setShowImageGallery(false);
-                            setError('✅ Imagen agregada a cola de publicación');
-                            setTimeout(() => setError(null), 3000);
-                          } catch (err) {
-                            console.error('Error adding image to slider:', err);
-                            setError('❌ Error al agregar imagen al slider');
-                            setTimeout(() => setError(null), 3000);
-                          }
-                        }}
-                      >
-                        <div className="aspect-video bg-gray-100">
-                          <img
-                            src={image.src}
-                            alt={image.name}
-                            className="w-full h-full object-cover"
-                          />
-                        </div>
-                        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                          <Plus className="w-6 h-6 text-white" />
-                        </div>
-                        <div className="absolute bottom-0 left-0 right-0 bg-black/70 text-white p-2">
-                          <p className="text-xs font-medium truncate">{image.name}</p>
-                          <p className="text-xs text-gray-300">
-                            {image.type === 'local' ? 'Assets' : 'Uploads'}
-                          </p>
-                        </div>
+        {/* Products Tab */}
+        {activeTab === "products" && (
+          <div className="space-y-6">
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {products.map((product) => {
+                const BACKEND_URL =
+                  (import.meta.env.VITE_API_URL as string | undefined)?.replace(
+                    "/api",
+                    "",
+                  ) || "http://localhost:3001";
+                const imgSrc = product.imageUrl?.startsWith("/uploads/")
+                  ? `${BACKEND_URL}${product.imageUrl}`
+                  : product.imageUrl;
+                return (
+                  <div
+                    key={product.id}
+                    className="border border-gray-200 rounded-lg p-4 flex gap-4 items-start"
+                  >
+                    <div
+                      className="w-16 h-20 rounded bg-gray-100 bg-center bg-cover flex-shrink-0"
+                      style={{ backgroundImage: `url('${imgSrc}')` }}
+                    />
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-semibold text-sm text-gray-900 truncate">
+                        {product.name}
+                      </h4>
+                      <p className="text-xs text-gray-500 mt-0.5">
+                        ${product.price.toFixed(2)}
+                      </p>
+                      <div className="flex gap-2 mt-1 flex-wrap">
+                        {product.featured && (
+                          <span className="text-[10px] bg-[#0d40a5] text-white px-2 py-0.5 rounded-full font-bold">
+                            Destacado #{product.featuredOrder + 1}
+                          </span>
+                        )}
+                        {product.badge && (
+                          <span className="text-[10px] bg-gray-200 text-gray-700 px-2 py-0.5 rounded-full">
+                            {product.badge}
+                          </span>
+                        )}
+                        {!product.active && (
+                          <span className="text-[10px] bg-red-100 text-red-600 px-2 py-0.5 rounded-full">
+                            Inactivo
+                          </span>
+                        )}
                       </div>
-                    ))}
+                    </div>
+                    <div className="flex flex-col gap-1 flex-shrink-0">
+                      <button
+                        onClick={() => handleProductEdit(product)}
+                        className="text-xs text-[#0d40a5] hover:underline font-medium"
+                      >
+                        Editar
+                      </button>
+                      <button
+                        onClick={() => handleProductDelete(product.id)}
+                        className="text-xs text-red-500 hover:underline font-medium"
+                      >
+                        Eliminar
+                      </button>
+                    </div>
                   </div>
-                  {availableImages.length === 0 && (
-                    <p className="text-gray-500 text-sm text-center py-4">
-                      No hay imágenes disponibles
-                    </p>
-                  )}
-                </div>
-              )}
+                );
+              })}
             </div>
+
+            <button
+              onClick={() => {
+                setEditingProduct(null);
+                setIsProductModalOpen(true);
+              }}
+              className="w-full border-2 border-dashed border-gray-300 rounded-lg p-6 text-gray-500 hover:border-[#0d40a5] hover:text-[#0d40a5] hover:bg-gray-50 transition-colors"
+            >
+              <Plus className="w-6 h-6 mx-auto mb-2" />
+              <span className="block text-sm font-medium">Nuevo Producto</span>
+            </button>
           </div>
         )}
 
         {/* Status Toast */}
         {error && !error.includes("Error al cargar") && (
-          <div className={`fixed bottom-4 right-4 px-4 py-3 rounded-lg shadow-lg z-40 max-w-md ${
-            error.includes("✅") 
-              ? "bg-green-600 text-white"
-              : error.includes("localmente") || error.includes("ejemplo") || error.includes("⚠️")
-              ? "bg-yellow-600 text-white"
-              : "bg-red-600 text-white"
-          }`}>
+          <div
+            className={`fixed bottom-4 right-4 px-4 py-3 rounded-lg shadow-lg z-40 max-w-md ${
+              error.includes("✅")
+                ? "bg-green-600 text-white"
+                : error.includes("localmente") ||
+                    error.includes("ejemplo") ||
+                    error.includes("⚠️")
+                  ? "bg-yellow-600 text-white"
+                  : "bg-red-600 text-white"
+            }`}
+          >
             <div className="flex items-center gap-3">
               <p className="text-sm flex-1">{error}</p>
-              <button 
+              <button
                 onClick={() => setError(null)}
                 className="text-white/80 hover:text-white font-bold text-lg leading-none p-1 hover:bg-white/20 rounded"
               >
@@ -1031,6 +1142,30 @@ export default function HomeEditor() {
           />
         )}
 
+        {/* Slider Edit Modal */}
+        {isSliderModalOpen && (
+          <SliderEditModal
+            slider={editingSlider}
+            onSave={handleSliderSave}
+            onClose={() => {
+              setIsSliderModalOpen(false);
+              setEditingSlider(null);
+            }}
+          />
+        )}
+
+        {/* Product Edit Modal */}
+        {isProductModalOpen && (
+          <ProductEditModal
+            product={editingProduct}
+            onSave={handleProductSave}
+            onClose={() => {
+              setIsProductModalOpen(false);
+              setEditingProduct(null);
+            }}
+          />
+        )}
+
         {/* Delete Confirmation Modal */}
         {showDeleteModal && sectionToDelete && (
           <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50">
@@ -1040,13 +1175,15 @@ export default function HomeEditor() {
                   Eliminar Sección
                 </h3>
                 <p className="text-gray-600">
-                  ¿Estás seguro de que quieres eliminar la sección "{sectionToDelete.title}"?
+                  ¿Estás seguro de que quieres eliminar la sección "
+                  {sectionToDelete.title}"?
                 </p>
                 <p className="text-sm text-gray-500 mt-2">
-                  Esta acción se agregará a los cambios pendientes y se aplicará cuando publiques los cambios.
+                  Esta acción se agregará a los cambios pendientes y se aplicará
+                  cuando publiques los cambios.
                 </p>
               </div>
-              
+
               <div className="flex justify-end gap-3">
                 <button
                   onClick={cancelSectionDelete}
