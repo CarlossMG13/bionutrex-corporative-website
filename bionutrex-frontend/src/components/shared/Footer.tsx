@@ -135,7 +135,15 @@ export function Footer() {
             ))}
           </div>
 
-          <p className="text-slate-500 text-xs">{data.copyright}</p>
+          <div className="flex items-center gap-4">
+            <p className="text-slate-500 text-xs">{data.copyright}</p>
+            <Link
+              to="/admin"
+              className="text-slate-600 hover:text-slate-400 text-[10px] font-medium tracking-widest uppercase transition-colors"
+            >
+              Acceso Admin
+            </Link>
+          </div>
         </div>
       </div>
     </footer>

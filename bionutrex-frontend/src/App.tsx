@@ -13,6 +13,8 @@ import { HomeDataProvider } from "@/contexts/HomeDataContext";
 import Home from "@/pages/Home";
 import Login from "@/pages/admin/Login";
 import About from "./pages/About";
+import Products from "./pages/Products";
+import Categories from "./pages/Categories";
 
 // Admin pages
 import Dashboard from "@/pages/admin/Dashboard";
@@ -23,6 +25,10 @@ import MediaLibrary from "@/pages/admin/MediaLibrary";
 import UserManagement from "@/pages/admin/UserManagement";
 import GlobalEditor from "@/pages/admin/GlobalEditor";
 import AboutEditor from "./pages/admin/AboutEditor";
+import ProductsEditor from "./pages/admin/ProductsEditor";
+import CategoriesEditor from "./pages/admin/CategoriesEditor";
+import Resources from "./pages/Resources";
+import ResourcesEditor from "./pages/admin/ResourcesEditor";
 
 /* import About from "@/pages/About"; */
 
@@ -53,6 +59,9 @@ function AppContent() {
           {/* Rutas publicas */}
           <Route path="/" element={<Home />} />
           <Route path="/about" element={<About />} />
+          <Route path="/products" element={<Products />} />
+          <Route path="/categories" element={<Categories />} />
+          <Route path="/resources" element={<Resources />} />
 
           {/* Ruta de Login (sin layout de admin) */}
           <Route path="/admin/login" element={<Login />} />
@@ -75,6 +84,9 @@ function AppContent() {
             <Route path="users" element={<UserManagement />} />
             <Route path="global" element={<GlobalEditor />} />
             <Route path="about" element={<AboutEditor />} />
+            <Route path="products-editor" element={<ProductsEditor />} />
+            <Route path="categories-editor" element={<CategoriesEditor />} />
+            <Route path="resources-editor" element={<ResourcesEditor />} />
           </Route>
         </Routes>
       </main>

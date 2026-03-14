@@ -121,21 +121,21 @@ export function Navbar({
                   Nosotros
                 </Link>
                 <Link
-                  to="/"
+                  to="/products"
                   className="text-slate-500 hover:text-[#0d40a5] transition-colors"
                   onMouseEnter={() => openMenu("productos")}
                 >
                   Productos
                 </Link>
                 <Link
-                  to="/"
+                  to="/categories"
                   className="text-slate-500 hover:text-[#0d40a5] transition-colors"
                   onMouseEnter={() => openMenu("categorias")}
                 >
                   Categorías
                 </Link>
                 <Link
-                  to="/"
+                  to="/resources"
                   className="text-slate-500 hover:text-[#0d40a5] transition-colors"
                   onMouseEnter={() => openMenu("recursos")}
                 >
@@ -206,8 +206,8 @@ export function Navbar({
 
         <nav className="flex flex-col p-6 space-y-6">
           {[
-            { label: "The Lab", to: "/" },
-            { label: "Amino Acids", to: "/" },
+            { label: "Nosotros", to: "/About" },
+            { label: "Productos", to: "/Products" },
             { label: "Protein Hub", to: "/" },
             { label: "Performance", to: "/" },
             { label: "Blog", to: "/blog" },
