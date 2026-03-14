@@ -91,18 +91,37 @@ export interface AuthResponse {
   admin: Admin;
 }
 
-export interface Product {
+export interface ProductVariant {
   id: string;
   name: string;
   price: number;
+  stock: number;
+  sku?: string;
+  pieces?: number;
+  grams?: number;
+}
+
+export interface Category {
+  id: string;
+  name: string;
+  slug: string;
+}
+
+export interface Product {
+  id: string;
+  name: string;
+  description?: string;
   imageUrl: string;
   badge?: string;
   badgeColor?: string;
-  rating: number;
-  reviewCount: number;
+  rating?: number;
+  reviewCount?: number;
   featured: boolean;
   featuredOrder: number;
   active: boolean;
   createdAt: string;
   updatedAt: string;
+  categoryId: string;
+  category?: Category;
+  variants?: ProductVariant[];
 }
