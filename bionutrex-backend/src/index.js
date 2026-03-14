@@ -7,27 +7,39 @@ import fs from "fs";
 import multer from "multer";
 import { v4 as uuidv4 } from "uuid";
 
+console.log("📦 Starting BioNutrex Backend...");
+
 // Import routes
+console.log("📥 Importing routes...");
 import authRoutes from "./routes/auth.js";
 import sliderRoutes from "./routes/sliders.js";
 import homeSectionRoutes from "./routes/homeSections.js";
 import blogPostRoutes from "./routes/blogPosts.js";
 import productRoutes from "./routes/products.js";
+import categoryRoutes from "./routes/categories.js";
+console.log("✅ Routes imported successfully");
 
 // ES modules setup
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+console.log("📂 Path setup complete");
 
 // Load environment variables
+console.log("⚙️  Loading environment variables...");
 dotenv.config();
+console.log("✅ Environment variables loaded");
 
 const app = express();
 const PORT = process.env.PORT || 3001;
 
+console.log(`🔧 Creating Express app on port ${PORT}...`);
+
 // Middleware
+console.log("📝 Setting up middleware...");
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+console.log("✅ Middleware configured");
 
 // Configuración de multer para subida de archivos
 const storage = multer.diskStorage({
@@ -90,14 +102,18 @@ const upload = multer({
 });
 
 // Servir archivos estáticos (uploads)
+console.log("🖼️  Setting up static file serving...");
 app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 
 // Routes
+console.log("🛣️  Registering API routes...");
 app.use("/api/auth", authRoutes);
 app.use("/api/sliders", sliderRoutes);
 app.use("/api/home-sections", homeSectionRoutes);
 app.use("/api/blog-posts", blogPostRoutes);
 app.use("/api/products", productRoutes);
+app.use("/api/categories", categoryRoutes);
+console.log("✅ All routes registered");
 
 // Health check
 app.get("/api/health", (req, res) => {
@@ -177,6 +193,32 @@ app.post("/api/uploads/multiple", upload.array("files", 10), (req, res) => {
   }
 });
 
+// Endpoint para eliminar un archivo de /uploads
+app.delete("/api/uploads/:fileName", async (req, res) => {
+  try {
+    const { fileName } = req.params;
+    const filePath = path.join(__dirname, "../uploads", fileName);
+
+    // Verificar si el archivo existe
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).json({ error: "Archivo no encontrado" });
+    }
+
+    // Eliminar el archivo
+    fs.unlink(filePath, (err) => {
+      if (err) {
+        console.error("Error al eliminar el archivo:", err);
+        return res.status(500).json({ error: "Error al eliminar el archivo" });
+      }
+
+      res.json({ message: "Archivo eliminado correctamente" });
+    });
+  } catch (error) {
+    console.error("Error en la eliminación del archivo:", error);
+    res.status(500).json({ error: "Error interno del servidor" });
+  }
+});
+
 // 404 handler
 app.use((req, res) => {
   res.status(404).json({ error: "Route not found" });
@@ -189,8 +231,10 @@ app.use((error, req, res, next) => {
 });
 
 // Start server
+console.log("🚀 Starting server...");
 app.listen(PORT, () => {
-  console.log(`🚀 BioNutrex API server running on port ${PORT}`);
+  console.log(`✅ BioNutrex API server running on port ${PORT}`);
   console.log(`📱 Health check: http://localhost:${PORT}/api/health`);
   console.log(`📂 Uploads served at: http://localhost:${PORT}/uploads`);
+  console.log("🎉 Server is ready to receive requests!");
 });

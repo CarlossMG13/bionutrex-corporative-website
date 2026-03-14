@@ -7,7 +7,6 @@ import {
   Eye,
   Trash2,
   Download,
-  Copy,
   Folder,
   Image as ImageIcon,
   Video,
@@ -134,6 +133,17 @@ export default function MediaLibrary() {
       setShowCreateFolder(false);
     } catch (error) {
       console.error('Error creating folder:', error);
+    }
+  };
+
+  const handleDeleteFile = async (fileId: string) => {
+    if (confirm("¿Estás seguro de eliminar este archivo?")) {
+      try {
+        await deleteFile(fileId);
+        loadFiles(); // Recargar la lista de archivos después de eliminar
+      } catch (error) {
+        console.error("Error deleting file:", error);
+      }
     }
   };
 
@@ -297,7 +307,7 @@ export default function MediaLibrary() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-blue-100 rounded-lg">
@@ -306,19 +316,6 @@ export default function MediaLibrary() {
             <div>
               <p className="text-sm text-gray-600">Total Archivos</p>
               <p className="text-xl font-bold text-gray-900">{stats.totalFiles}</p>
-            </div>
-          </div>
-        </div>
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-green-100 rounded-lg">
-              <Archive className="w-5 h-5 text-green-600" />
-            </div>
-            <div>
-              <p className="text-sm text-gray-600">Espacio Usado</p>
-              <p className="text-xl font-bold text-gray-900">
-                {formatFileSize(stats.totalSize)}
-              </p>
             </div>
           </div>
         </div>
@@ -473,29 +470,13 @@ export default function MediaLibrary() {
                   </div>
                   
                   <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <div className="flex gap-1">
-                      <button 
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setPreviewFile(file.id);
-                        }}
-                        className="p-1 bg-white bg-opacity-80 rounded-lg hover:bg-opacity-100 transition-all"
-                      >
-                        <Eye className="w-3 h-3 text-gray-600" />
-                      </button>
-                      <button 
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          const link = document.createElement('a');
-                          link.href = file.url;
-                          link.download = file.name;
-                          link.click();
-                        }}
-                        className="p-1 bg-white bg-opacity-80 rounded-lg hover:bg-opacity-100 transition-all"
-                      >
-                        <Download className="w-3 h-3 text-gray-600" />
-                      </button>
-                    </div>
+                    <button
+                      onClick={() => handleDeleteFile(file.id)}
+                      className="p-1 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors"
+                      title="Eliminar archivo"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
                   </div>
                 </div>
                 
@@ -611,16 +592,19 @@ export default function MediaLibrary() {
                           >
                             <Download className="w-4 h-4" />
                           </button>
-                          <button 
-                            onClick={() => {
-                              navigator.clipboard.writeText(file.url);
+                          <button
+                            onClick={async (e) => {
+                              e.stopPropagation();
+                              if (confirm(`¿Estás seguro de eliminar la imagen "${file.name}"?`)) {
+                                try {
+                                  await deleteFile(file.id);
+                                  setSelectedFiles((prev) => prev.filter((id) => id !== file.id)); // Remove from selected files
+                                  loadFiles(); // Reload files to update the list
+                                } catch (error) {
+                                  console.error('Error deleting file:', error);
+                                }
+                              }
                             }}
-                            className="p-1 text-gray-400 hover:text-purple-600 transition-colors"
-                          >
-                            <Copy className="w-4 h-4" />
-                          </button>
-                          <button 
-                            onClick={() => deleteFile(file.id)}
                             className="p-1 text-gray-400 hover:text-red-600 transition-colors"
                           >
                             <Trash2 className="w-4 h-4" />

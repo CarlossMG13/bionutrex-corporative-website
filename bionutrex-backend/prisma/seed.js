@@ -20,6 +20,26 @@ async function seed() {
 
     console.log("✅ Admin created:", admin.email);
 
+    // Crear categorías de productos por defecto
+    const DEFAULT_CATEGORIES = [
+      { name: "Suplementos", slug: "suplementos" },
+      { name: "Vitaminas", slug: "vitaminas" },
+      { name: "Digestión", slug: "digestion" },
+      { name: "Antioxidantes", slug: "antioxidantes" },
+      { name: "Energía", slug: "energia" },
+      { name: "Sistema Inmunológico", slug: "sistema-inmunologico" },
+    ];
+
+    for (const category of DEFAULT_CATEGORIES) {
+      await prisma.category.upsert({
+        where: { slug: category.slug },
+        update: {},
+        create: category,
+      });
+    }
+
+    console.log("✅ Categories created: 6 default product categories");
+
     // Crear algunas secciones de home por defecto
     const homeSections = [
       {

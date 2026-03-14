@@ -106,19 +106,53 @@ model BlogPost {
 }
 
 model Product {
-  id            String   @id @default(cuid())
+  id            String           @id @default(cuid())
   name          String
-  price         Float
+  description   String?
   imageUrl      String
   badge         String?
-  badgeColor    String?  @default("#0d40a5")
-  rating        Float    @default(5.0)
-  reviewCount   Int      @default(0)
-  featured      Boolean  @default(false)
-  featuredOrder Int      @default(0)
-  active        Boolean  @default(true)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  badgeColor    String?          @default("#0d40a5")
+  rating        Float            @default(5.0)
+  reviewCount   Int              @default(0)
+  featured      Boolean          @default(false)
+  featuredOrder Int              @default(0)
+  active        Boolean          @default(true)
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+  
+
+  // Relación con Categoría
+  categoryId    String
+  category      Category         @relation(fields: [categoryId], references: [id])
+
+  // Relación con Variantes
+  variants      ProductVariant[]
 
   @@map("products")
+}
+
+model ProductVariant {
+  id        String   @id @default(cuid())
+  name      String   
+  price     Float    
+  stock     Int      @default(0)
+  sku       String?  @unique
+  pieces    Int?
+  grams     Float?
+
+  
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@map("product_variants")
+}
+
+model Category {
+  id        String    @id @default(cuid())
+  name      String   
+  slug      String    @unique
+ 
+  products  Product[]
+
+  @@map("categories")
 }
