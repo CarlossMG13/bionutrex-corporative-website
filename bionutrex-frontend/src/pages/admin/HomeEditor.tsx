@@ -260,6 +260,19 @@ export default function HomeEditor() {
           const adminResponse = await homeSectionAPI.getAllAdmin();
           isApiAvailable = true;
           adminSections = adminResponse.data;
+
+          // Filtrar solo las secciones que pertenecen a Home
+          const HOME_KEYS = [
+            "hero",
+            "home_video_hero",
+            "quality",
+            "methodology",
+            "blog",
+          ];
+          adminSections = adminSections.filter((s) =>
+            HOME_KEYS.includes(s.sectionKey),
+          );
+
           console.log("✅ API de admin disponible - datos reales cargados");
         } catch (adminError) {
           console.warn("❌ Endpoints de admin fallan:", adminError);
@@ -268,6 +281,18 @@ export default function HomeEditor() {
           try {
             const publicResponse = await homeSectionAPI.getAll();
             adminSections = publicResponse.data;
+
+            const HOME_KEYS = [
+              "hero",
+              "home_video_hero",
+              "quality",
+              "methodology",
+              "blog",
+            ];
+            adminSections = adminSections.filter((s) =>
+              HOME_KEYS.includes(s.sectionKey),
+            );
+
             isApiAvailable = true;
             console.log("✅ Fallback a endpoint público funciona");
           } catch (publicError) {

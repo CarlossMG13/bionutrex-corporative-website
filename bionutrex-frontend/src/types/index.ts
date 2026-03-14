@@ -45,6 +45,8 @@ export interface HomeSection {
   images?: SectionImage[];
   buttonText?: string;
   buttonLink?: string;
+  button2Text?: string;
+  button2Link?: string;
   active: boolean;
   order: number;
   // Campos hero

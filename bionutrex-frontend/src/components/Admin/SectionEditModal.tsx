@@ -60,6 +60,18 @@ export function SectionEditModal({
     new Set(),
   );
 
+  // Para categories_goals
+  const [goalTab, setGoalTab] = useState(0);
+  const [goalProductGroups, setGoalProductGroups] = useState<Product[][]>([
+    [],
+    [],
+    [],
+    [],
+  ]);
+  const [goalAllProducts, setGoalAllProducts] = useState<Product[]>([]);
+  const [loadingGoalProducts, setLoadingGoalProducts] = useState(false);
+  const [goalDragId, setGoalDragId] = useState<string | null>(null);
+
   const getSectionImageConfig = (sectionKey: string) => {
     const configs: Record<
       string,
@@ -114,6 +126,63 @@ export function SectionEditModal({
         imageLabels: ["Imagen póster (fallback si no hay video)"],
         altLabel: "Alt text",
         captionLabel: "Descripción (opcional)",
+      },
+      products_feature: {
+        maxImages: 1,
+        imageLabels: ["Imagen del producto"],
+        altLabel: "Alt text",
+        captionLabel: "Descripción (opcional)",
+      },
+      products_feature_alt: {
+        maxImages: 1,
+        imageLabels: ["Imagen del producto"],
+        altLabel: "Alt text",
+        captionLabel: "Descripción (opcional)",
+      },
+      products_preworkout: { maxImages: 0, imageLabels: [] },
+      products_cta: { maxImages: 0, imageLabels: [] },
+      categories_hero: {
+        maxImages: 1,
+        imageLabels: ["Imagen / video de fondo"],
+        altLabel: "Alt text",
+        captionLabel: "Descripción (opcional)",
+      },
+      categories_goals: {
+        maxImages: 4,
+        imageLabels: [
+          "Imagen Categoría 1",
+          "Imagen Categoría 2",
+          "Imagen Categoría 3",
+          "Imagen Categoría 4",
+        ],
+        altLabel: "Alt text",
+      },
+      categories_stack: { maxImages: 0, imageLabels: [] },
+      categories_why: {
+        maxImages: 1,
+        imageLabels: ["Imagen principal (laboratorio)"],
+        altLabel: "Alt text",
+      },
+      resources_hero: {
+        maxImages: 1,
+        imageLabels: ["Imagen de fondo"],
+        altLabel: "Alt text",
+      },
+      resources_filter: { maxImages: 0, imageLabels: [] },
+      resources_catalogs: {
+        maxImages: 3,
+        imageLabels: [
+          "Vista previa catálogo 1",
+          "Vista previa catálogo 2",
+          "Vista previa catálogo 3",
+        ],
+        altLabel: "Alt text",
+      },
+      resources_table: { maxImages: 0, imageLabels: [] },
+      resources_cta: {
+        maxImages: 1,
+        imageLabels: ["Imagen decorativa (derecha)"],
+        altLabel: "Alt text",
       },
     };
     return (
@@ -177,6 +246,32 @@ export function SectionEditModal({
       })
       .catch(() => setProductError("No se pudieron cargar los productos"))
       .finally(() => setLoadingProducts(false));
+  }, [section?.sectionKey]);
+
+  useEffect(() => {
+    if (section?.sectionKey !== "categories_goals") return;
+    setLoadingGoalProducts(true);
+    productAPI
+      .getAllAdmin()
+      .then((res) => {
+        const all: Product[] = res.data;
+        setGoalAllProducts(all.filter((p) => p.active));
+
+        let goals: { productIds?: string[] }[] = [];
+        try {
+          goals = JSON.parse(section.content ?? "[]");
+        } catch {}
+
+        const groups: Product[][] = [[], [], [], []];
+        goals.slice(0, 4).forEach((goal, gi) => {
+          groups[gi] = (goal.productIds ?? [])
+            .map((id) => all.find((p) => p.id === id))
+            .filter(Boolean) as Product[];
+        });
+        setGoalProductGroups(groups);
+      })
+      .catch(() => {})
+      .finally(() => setLoadingGoalProducts(false));
   }, [section?.sectionKey]);
 
   if (!editingSection) return null;
@@ -549,7 +644,9 @@ export function SectionEditModal({
                 Video de fondo
               </label>
               <p className="text-xs text-gray-400">
-                Sube un archivo de video o pega una URL directa (MP4 recomendado). El video se reproducirá en bucle, sin sonido y a pantalla completa.
+                Sube un archivo de video o pega una URL directa (MP4
+                recomendado). El video se reproducirá en bucle, sin sonido y a
+                pantalla completa.
               </p>
               <div>
                 <label className="block text-xs font-medium text-gray-600 mb-1">
@@ -827,11 +924,7 @@ export function SectionEditModal({
                 badges = [];
               }
 
-              const updateBadge = (
-                idx: number,
-                field: string,
-                val: string,
-              ) => {
+              const updateBadge = (idx: number, field: string, val: string) => {
                 const updated = [...badges];
                 updated[idx] = { ...updated[idx], [field]: val };
                 handleChange("content", JSON.stringify(updated));
@@ -947,6 +1040,1304 @@ export function SectionEditModal({
                               }
                             />
                           </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })()}
+
+          {/* ── Badge Editor (products_feature) ── */}
+          {editingSection.sectionKey === "products_feature" &&
+            (() => {
+              let parsed: {
+                description: string;
+                badges: { value: string; label: string }[];
+              } = { description: "", badges: [] };
+              try {
+                const p = JSON.parse(editingSection.content);
+                parsed = {
+                  description: p.description ?? editingSection.content,
+                  badges: Array.isArray(p.badges) ? p.badges : [],
+                };
+              } catch {
+                parsed = { description: editingSection.content, badges: [] };
+              }
+
+              const update = (next: typeof parsed) =>
+                handleChange("content", JSON.stringify(next));
+
+              return (
+                <div className="space-y-4">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Contenido del producto destacado
+                  </label>
+
+                  {/* Descripción */}
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">
+                      Descripción
+                    </label>
+                    <textarea
+                      rows={3}
+                      value={parsed.description}
+                      onChange={(e) =>
+                        update({ ...parsed, description: e.target.value })
+                      }
+                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0d40a5] outline-none resize-none"
+                      placeholder="Descripción del producto..."
+                    />
+                  </div>
+
+                  {/* Badges */}
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <label className="block text-xs font-medium text-gray-600">
+                        Badges ({parsed.badges.length}/4)
+                      </label>
+                      {parsed.badges.length < 4 && (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            update({
+                              ...parsed,
+                              badges: [
+                                ...parsed.badges,
+                                { value: "", label: "" },
+                              ],
+                            })
+                          }
+                          className="flex items-center gap-1 text-xs text-[#0d40a5] hover:underline"
+                        >
+                          <Plus className="w-3 h-3" />
+                          Agregar
+                        </button>
+                      )}
+                    </div>
+                    <div className="space-y-2">
+                      {parsed.badges.map((badge, bi) => (
+                        <div
+                          key={bi}
+                          className="grid grid-cols-[1fr_1fr_auto] gap-2 items-center"
+                        >
+                          <input
+                            value={badge.value}
+                            onChange={(e) => {
+                              const next = [...parsed.badges];
+                              next[bi] = { ...next[bi], value: e.target.value };
+                              update({ ...parsed, badges: next });
+                            }}
+                            placeholder="28G"
+                            className="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0d40a5] outline-none"
+                          />
+                          <input
+                            value={badge.label}
+                            onChange={(e) => {
+                              const next = [...parsed.badges];
+                              next[bi] = { ...next[bi], label: e.target.value };
+                              update({ ...parsed, badges: next });
+                            }}
+                            placeholder="Pure Isolate"
+                            className="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0d40a5] outline-none"
+                          />
+                          <button
+                            type="button"
+                            onClick={() =>
+                              update({
+                                ...parsed,
+                                badges: parsed.badges.filter(
+                                  (_, i) => i !== bi,
+                                ),
+                              })
+                            }
+                            className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
+
+          {/* ── Feature Editor (products_feature_alt) ── */}
+          {editingSection.sectionKey === "products_feature_alt" &&
+            (() => {
+              let parsed: {
+                description: string;
+                features: { icon: string; label: string }[];
+              } = { description: "", features: [] };
+              try {
+                const p = JSON.parse(editingSection.content);
+                parsed = {
+                  description: p.description ?? editingSection.content,
+                  features: Array.isArray(p.features) ? p.features : [],
+                };
+              } catch {
+                parsed = { description: editingSection.content, features: [] };
+              }
+
+              const update = (next: typeof parsed) =>
+                handleChange("content", JSON.stringify(next));
+
+              return (
+                <div className="space-y-4">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Contenido del producto
+                  </label>
+
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">
+                      Descripción
+                    </label>
+                    <textarea
+                      rows={3}
+                      value={parsed.description}
+                      onChange={(e) =>
+                        update({ ...parsed, description: e.target.value })
+                      }
+                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0d40a5] outline-none resize-none"
+                      placeholder="Descripción del producto..."
+                    />
+                  </div>
+
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <label className="block text-xs font-medium text-gray-600">
+                        Features / Bullets ({parsed.features.length}/4)
+                      </label>
+                      {parsed.features.length < 4 && (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            update({
+                              ...parsed,
+                              features: [
+                                ...parsed.features,
+                                { icon: "verified", label: "" },
+                              ],
+                            })
+                          }
+                          className="flex items-center gap-1 text-xs text-[#0d40a5] hover:underline"
+                        >
+                          <Plus className="w-3 h-3" />
+                          Agregar
+                        </button>
+                      )}
+                    </div>
+                    <div className="space-y-2">
+                      {parsed.features.map((feat, fi) => (
+                        <div
+                          key={fi}
+                          className="grid grid-cols-[1fr_2fr_auto] gap-2 items-center"
+                        >
+                          <input
+                            value={feat.icon}
+                            onChange={(e) => {
+                              const next = [...parsed.features];
+                              next[fi] = { ...next[fi], icon: e.target.value };
+                              update({ ...parsed, features: next });
+                            }}
+                            placeholder="verified"
+                            className="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0d40a5] outline-none"
+                          />
+                          <input
+                            value={feat.label}
+                            onChange={(e) => {
+                              const next = [...parsed.features];
+                              next[fi] = { ...next[fi], label: e.target.value };
+                              update({ ...parsed, features: next });
+                            }}
+                            placeholder="Pharmaceutical Grade"
+                            className="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0d40a5] outline-none"
+                          />
+                          <button
+                            type="button"
+                            onClick={() =>
+                              update({
+                                ...parsed,
+                                features: parsed.features.filter(
+                                  (_, i) => i !== fi,
+                                ),
+                              })
+                            }
+                            className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                    <p className="text-xs text-gray-400 mt-2">
+                      Iconos: nombre de Material Symbols (verified, analytics,
+                      science, bolt...)
+                    </p>
+                  </div>
+                </div>
+              );
+            })()}
+
+          {/* ── PreWorkout Editor (products_preworkout) ── */}
+          {editingSection.sectionKey === "products_preworkout" &&
+            (() => {
+              let parsed: {
+                description: string;
+                icon: string;
+                productName: string;
+                stats: { value: string; label: string }[];
+              } = {
+                description: "",
+                icon: "offline_bolt",
+                productName: "",
+                stats: [],
+              };
+              try {
+                const p = JSON.parse(editingSection.content);
+                parsed = {
+                  description: p.description ?? editingSection.content,
+                  icon: p.icon ?? "offline_bolt",
+                  productName: p.productName ?? "",
+                  stats: Array.isArray(p.stats) ? p.stats : [],
+                };
+              } catch {
+                parsed = {
+                  description: editingSection.content,
+                  icon: "offline_bolt",
+                  productName: "",
+                  stats: [],
+                };
+              }
+
+              const update = (next: typeof parsed) =>
+                handleChange("content", JSON.stringify(next));
+
+              return (
+                <div className="space-y-4">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Contenido del Pre-Workout
+                  </label>
+
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">
+                      Nombre del producto (subtítulo grande)
+                    </label>
+                    <input
+                      value={parsed.productName}
+                      onChange={(e) =>
+                        update({ ...parsed, productName: e.target.value })
+                      }
+                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0d40a5] outline-none"
+                      placeholder="Hyper-Focus Pre-Workout"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">
+                      Descripción
+                    </label>
+                    <textarea
+                      rows={3}
+                      value={parsed.description}
+                      onChange={(e) =>
+                        update({ ...parsed, description: e.target.value })
+                      }
+                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0d40a5] outline-none resize-none"
+                      placeholder="Descripción del producto..."
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">
+                      Icono decorativo (Material Symbol)
+                    </label>
+                    <input
+                      value={parsed.icon}
+                      onChange={(e) =>
+                        update({ ...parsed, icon: e.target.value })
+                      }
+                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0d40a5] outline-none"
+                      placeholder="offline_bolt"
+                    />
+                  </div>
+
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <label className="block text-xs font-medium text-gray-600">
+                        Stats ({parsed.stats.length}/4)
+                      </label>
+                      {parsed.stats.length < 4 && (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            update({
+                              ...parsed,
+                              stats: [
+                                ...parsed.stats,
+                                { value: "", label: "" },
+                              ],
+                            })
+                          }
+                          className="flex items-center gap-1 text-xs text-[#0d40a5] hover:underline"
+                        >
+                          <Plus className="w-3 h-3" />
+                          Agregar
+                        </button>
+                      )}
+                    </div>
+                    <div className="space-y-2">
+                      {parsed.stats.map((stat, si) => (
+                        <div
+                          key={si}
+                          className="grid grid-cols-[1fr_2fr_auto] gap-2 items-center"
+                        >
+                          <input
+                            value={stat.value}
+                            onChange={(e) => {
+                              const next = [...parsed.stats];
+                              next[si] = { ...next[si], value: e.target.value };
+                              update({ ...parsed, stats: next });
+                            }}
+                            placeholder="PUMP"
+                            className="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0d40a5] outline-none"
+                          />
+                          <input
+                            value={stat.label}
+                            onChange={(e) => {
+                              const next = [...parsed.stats];
+                              next[si] = { ...next[si], label: e.target.value };
+                              update({ ...parsed, stats: next });
+                            }}
+                            placeholder="Nitrate Blend"
+                            className="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0d40a5] outline-none"
+                          />
+                          <button
+                            type="button"
+                            onClick={() =>
+                              update({
+                                ...parsed,
+                                stats: parsed.stats.filter((_, i) => i !== si),
+                              })
+                            }
+                            className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
+
+          {/* ── Goals Editor (categories_goals) ── */}
+          {editingSection.sectionKey === "categories_goals" &&
+            (() => {
+              let goals: {
+                title: string;
+                description: string;
+                link: string;
+                productIds?: string[];
+              }[] = [];
+              try {
+                const p = JSON.parse(editingSection.content);
+                if (Array.isArray(p)) goals = p;
+              } catch {}
+              while (goals.length < 4) {
+                goals.push({ title: "", description: "", link: "/" });
+              }
+
+              const GOAL_NAMES = [
+                "Muscle Building",
+                "Fat Loss",
+                "Recovery",
+                "Endurance",
+              ];
+
+              const updateGoal = (
+                idx: number,
+                field: string,
+                value: string,
+              ) => {
+                const updated = goals.map((g, i) =>
+                  i === idx ? { ...g, [field]: value } : g,
+                );
+                handleChange("content", JSON.stringify(updated));
+              };
+
+              const syncProducts = (groups: Product[][]) => {
+                const updated = goals.map((g, i) => ({
+                  ...g,
+                  productIds: (groups[i] ?? []).map((p) => p.id),
+                }));
+                handleChange("content", JSON.stringify(updated));
+              };
+
+              const addProduct = (product: Product) => {
+                if (
+                  goalProductGroups[goalTab]?.find((p) => p.id === product.id)
+                )
+                  return;
+                const next = goalProductGroups.map((g, i) =>
+                  i === goalTab ? [...g, product] : g,
+                );
+                setGoalProductGroups(next);
+                syncProducts(next);
+              };
+
+              const removeProduct = (productId: string) => {
+                const next = goalProductGroups.map((g, i) =>
+                  i === goalTab ? g.filter((p) => p.id !== productId) : g,
+                );
+                setGoalProductGroups(next);
+                syncProducts(next);
+              };
+
+              const reorderProduct = (fromId: string, toId: string) => {
+                const group = [...(goalProductGroups[goalTab] ?? [])];
+                const from = group.findIndex((p) => p.id === fromId);
+                const to = group.findIndex((p) => p.id === toId);
+                if (from === -1 || to === -1) return;
+                const [item] = group.splice(from, 1);
+                group.splice(to, 0, item);
+                const next = goalProductGroups.map((g, i) =>
+                  i === goalTab ? group : g,
+                );
+                setGoalProductGroups(next);
+                syncProducts(next);
+              };
+
+              const assigned = goalProductGroups[goalTab] ?? [];
+              const assignedIds = new Set(assigned.map((p) => p.id));
+              const available = goalAllProducts.filter(
+                (p) => !assignedIds.has(p.id),
+              );
+
+              return (
+                <div className="space-y-6">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Categorías del grid
+                  </label>
+
+                  {/* Card editors */}
+                  <div className="space-y-4">
+                    {goals.map((goal, i) => (
+                      <div
+                        key={i}
+                        className="border border-gray-200 rounded-lg p-4 space-y-2"
+                      >
+                        <span className="text-xs font-semibold text-gray-500 uppercase">
+                          {GOAL_NAMES[i] ?? `Categoría ${i + 1}`}
+                        </span>
+                        <input
+                          value={goal.title}
+                          onChange={(e) =>
+                            updateGoal(i, "title", e.target.value)
+                          }
+                          placeholder="Título (ej: Muscle Building)"
+                          className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0d40a5] outline-none"
+                        />
+                        <textarea
+                          rows={2}
+                          value={goal.description}
+                          onChange={(e) =>
+                            updateGoal(i, "description", e.target.value)
+                          }
+                          placeholder="Descripción..."
+                          className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0d40a5] outline-none resize-none"
+                        />
+                        <input
+                          value={goal.link}
+                          onChange={(e) =>
+                            updateGoal(i, "link", e.target.value)
+                          }
+                          placeholder="Enlace (ej: /categories/muscle)"
+                          className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0d40a5] outline-none"
+                        />
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Product assignment per category */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Productos por categoría
+                    </label>
+
+                    {/* Tab selector */}
+                    <div className="flex border border-gray-200 rounded-lg overflow-hidden mb-4">
+                      {GOAL_NAMES.map((name, i) => (
+                        <button
+                          key={i}
+                          type="button"
+                          onClick={() => setGoalTab(i)}
+                          className={`flex-1 py-2 text-xs font-semibold transition-colors ${
+                            goalTab === i
+                              ? "bg-[#0d40a5] text-white"
+                              : "bg-white text-gray-600 hover:bg-gray-50"
+                          }`}
+                        >
+                          {name.split(" ")[0]}
+                        </button>
+                      ))}
+                    </div>
+
+                    {loadingGoalProducts ? (
+                      <p className="text-xs text-gray-400">
+                        Cargando productos...
+                      </p>
+                    ) : (
+                      <>
+                        {/* Assigned (draggable to reorder) */}
+                        <p className="text-xs font-medium text-gray-600 mb-2">
+                          Asignados ({assigned.length})
+                        </p>
+                        {assigned.length === 0 ? (
+                          <p className="text-xs text-gray-400 mb-3 italic">
+                            Sin productos asignados
+                          </p>
+                        ) : (
+                          <div className="space-y-2 mb-4">
+                            {assigned.map((product) => (
+                              <div
+                                key={product.id}
+                                draggable
+                                onDragStart={() => setGoalDragId(product.id)}
+                                onDragOver={(e) => e.preventDefault()}
+                                onDrop={() => {
+                                  if (goalDragId && goalDragId !== product.id) {
+                                    reorderProduct(goalDragId, product.id);
+                                  }
+                                  setGoalDragId(null);
+                                }}
+                                onDragEnd={() => setGoalDragId(null)}
+                                className="flex items-center justify-between p-2 bg-gray-50 rounded-lg border border-gray-200 cursor-grab"
+                              >
+                                <div className="flex items-center gap-2">
+                                  <GripVertical className="w-4 h-4 text-gray-400" />
+                                  <span className="text-sm text-gray-700">
+                                    {product.name}
+                                  </span>
+                                </div>
+                                <button
+                                  type="button"
+                                  onClick={() => removeProduct(product.id)}
+                                  className="text-xs text-red-500 hover:underline"
+                                >
+                                  Quitar
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+
+                        {/* Available */}
+                        {available.length > 0 && (
+                          <>
+                            <p className="text-xs font-medium text-gray-600 mb-2">
+                              Disponibles — click + para asignar
+                            </p>
+                            <div className="max-h-40 overflow-y-auto space-y-1 border border-gray-200 rounded-lg p-2">
+                              {available.map((product) => (
+                                <div
+                                  key={product.id}
+                                  className="flex items-center justify-between py-1 px-2 rounded hover:bg-gray-50"
+                                >
+                                  <span className="text-sm text-gray-700">
+                                    {product.name}
+                                  </span>
+                                  <button
+                                    type="button"
+                                    onClick={() => addProduct(product)}
+                                    className="w-6 h-6 flex items-center justify-center rounded-full bg-[#0d40a5] text-white hover:bg-[#0d40a5]/80"
+                                  >
+                                    <Plus className="w-3 h-3" />
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
+                          </>
+                        )}
+                      </>
+                    )}
+                  </div>
+                </div>
+              );
+            })()}
+
+          {/* ── Stack Bundle Editor (categories_stack) ── */}
+          {editingSection.sectionKey === "categories_stack" &&
+            (() => {
+              let bundle: {
+                bundleTitle: string;
+                bundleText: string;
+                originalPrice: string;
+                salePrice: string;
+                icon: string;
+              } = {
+                bundleTitle: "",
+                bundleText: "",
+                originalPrice: "",
+                salePrice: "",
+                icon: "inventory_2",
+              };
+              try {
+                const p = JSON.parse(editingSection.content);
+                bundle = { ...bundle, ...p };
+              } catch {}
+
+              const update = (next: typeof bundle) =>
+                handleChange("content", JSON.stringify(next));
+
+              return (
+                <div className="space-y-3">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Oferta de bundle
+                  </label>
+                  <p className="text-xs text-gray-400">
+                    Los productos del stack son los marcados como "Featured" en
+                    el editor de productos.
+                  </p>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">
+                      Título del bundle
+                    </label>
+                    <input
+                      value={bundle.bundleTitle}
+                      onChange={(e) =>
+                        update({ ...bundle, bundleTitle: e.target.value })
+                      }
+                      placeholder="The Ultimate Hypertrophy Stack"
+                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0d40a5] outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">
+                      Descripción del bundle
+                    </label>
+                    <input
+                      value={bundle.bundleText}
+                      onChange={(e) =>
+                        update({ ...bundle, bundleText: e.target.value })
+                      }
+                      placeholder="Save 15% when you buy all three together."
+                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0d40a5] outline-none"
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-medium text-gray-600 mb-1">
+                        Precio original
+                      </label>
+                      <input
+                        value={bundle.originalPrice}
+                        onChange={(e) =>
+                          update({ ...bundle, originalPrice: e.target.value })
+                        }
+                        placeholder="$132.97"
+                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0d40a5] outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-600 mb-1">
+                        Precio oferta
+                      </label>
+                      <input
+                        value={bundle.salePrice}
+                        onChange={(e) =>
+                          update({ ...bundle, salePrice: e.target.value })
+                        }
+                        placeholder="$112.99"
+                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0d40a5] outline-none"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">
+                      Icono (Material Symbol)
+                    </label>
+                    <input
+                      value={bundle.icon}
+                      onChange={(e) =>
+                        update({ ...bundle, icon: e.target.value })
+                      }
+                      placeholder="inventory_2"
+                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0d40a5] outline-none"
+                    />
+                  </div>
+                </div>
+              );
+            })()}
+
+          {/* ── Why Editor (categories_why) ── */}
+          {editingSection.sectionKey === "categories_why" &&
+            (() => {
+              let parsed: {
+                description: string;
+                bullets: { icon: string; title: string; description: string }[];
+                testimonial: {
+                  name: string;
+                  role: string;
+                  quote: string;
+                  imageUrl: string;
+                };
+              } = {
+                description: "",
+                bullets: [],
+                testimonial: { name: "", role: "", quote: "", imageUrl: "" },
+              };
+              try {
+                const p = JSON.parse(editingSection.content);
+                parsed = {
+                  description: p.description ?? "",
+                  bullets: Array.isArray(p.bullets) ? p.bullets : [],
+                  testimonial: p.testimonial ?? {
+                    name: "",
+                    role: "",
+                    quote: "",
+                    imageUrl: "",
+                  },
+                };
+              } catch {}
+
+              const update = (next: typeof parsed) =>
+                handleChange("content", JSON.stringify(next));
+
+              return (
+                <div className="space-y-5">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Contenido — ¿Por qué Bionutrex?
+                  </label>
+
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">
+                      Descripción
+                    </label>
+                    <textarea
+                      rows={3}
+                      value={parsed.description}
+                      onChange={(e) =>
+                        update({ ...parsed, description: e.target.value })
+                      }
+                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0d40a5] outline-none resize-none"
+                      placeholder="Descripción general..."
+                    />
+                  </div>
+
+                  {/* Bullets */}
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <label className="text-xs font-medium text-gray-600">
+                        Bullets ({parsed.bullets.length}/4)
+                      </label>
+                      {parsed.bullets.length < 4 && (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            update({
+                              ...parsed,
+                              bullets: [
+                                ...parsed.bullets,
+                                {
+                                  icon: "verified",
+                                  title: "",
+                                  description: "",
+                                },
+                              ],
+                            })
+                          }
+                          className="flex items-center gap-1 text-xs text-[#0d40a5] hover:underline"
+                        >
+                          <Plus className="w-3 h-3" /> Agregar
+                        </button>
+                      )}
+                    </div>
+                    <div className="space-y-3">
+                      {parsed.bullets.map((b, bi) => (
+                        <div
+                          key={bi}
+                          className="border border-gray-200 rounded-lg p-3 space-y-2"
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-semibold text-gray-500">
+                              Bullet {bi + 1}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                update({
+                                  ...parsed,
+                                  bullets: parsed.bullets.filter(
+                                    (_, i) => i !== bi,
+                                  ),
+                                })
+                              }
+                              className="text-xs text-red-500 hover:underline"
+                            >
+                              Eliminar
+                            </button>
+                          </div>
+                          <div className="grid grid-cols-[1fr_2fr] gap-2">
+                            <input
+                              value={b.icon}
+                              onChange={(e) => {
+                                const next = [...parsed.bullets];
+                                next[bi] = {
+                                  ...next[bi],
+                                  icon: e.target.value,
+                                };
+                                update({ ...parsed, bullets: next });
+                              }}
+                              placeholder="verified"
+                              className="px-2 py-1.5 text-xs border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0d40a5] outline-none"
+                            />
+                            <input
+                              value={b.title}
+                              onChange={(e) => {
+                                const next = [...parsed.bullets];
+                                next[bi] = {
+                                  ...next[bi],
+                                  title: e.target.value,
+                                };
+                                update({ ...parsed, bullets: next });
+                              }}
+                              placeholder="Third Party Tested"
+                              className="px-2 py-1.5 text-xs border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0d40a5] outline-none"
+                            />
+                          </div>
+                          <input
+                            value={b.description}
+                            onChange={(e) => {
+                              const next = [...parsed.bullets];
+                              next[bi] = {
+                                ...next[bi],
+                                description: e.target.value,
+                              };
+                              update({ ...parsed, bullets: next });
+                            }}
+                            placeholder="Descripción del bullet..."
+                            className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0d40a5] outline-none"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Testimonial */}
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-2">
+                      Testimonio (overlay sobre la imagen)
+                    </label>
+                    <div className="border border-gray-200 rounded-lg p-3 space-y-2">
+                      <input
+                        value={parsed.testimonial.name}
+                        onChange={(e) =>
+                          update({
+                            ...parsed,
+                            testimonial: {
+                              ...parsed.testimonial,
+                              name: e.target.value,
+                            },
+                          })
+                        }
+                        placeholder="Dr. Elena Vance"
+                        className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0d40a5] outline-none"
+                      />
+                      <input
+                        value={parsed.testimonial.role}
+                        onChange={(e) =>
+                          update({
+                            ...parsed,
+                            testimonial: {
+                              ...parsed.testimonial,
+                              role: e.target.value,
+                            },
+                          })
+                        }
+                        placeholder="Head of Performance Science"
+                        className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0d40a5] outline-none"
+                      />
+                      <textarea
+                        rows={2}
+                        value={parsed.testimonial.quote}
+                        onChange={(e) =>
+                          update({
+                            ...parsed,
+                            testimonial: {
+                              ...parsed.testimonial,
+                              quote: e.target.value,
+                            },
+                          })
+                        }
+                        placeholder="Cita del testimonio..."
+                        className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0d40a5] outline-none resize-none"
+                      />
+                      <input
+                        value={parsed.testimonial.imageUrl}
+                        onChange={(e) =>
+                          update({
+                            ...parsed,
+                            testimonial: {
+                              ...parsed.testimonial,
+                              imageUrl: e.target.value,
+                            },
+                          })
+                        }
+                        placeholder="URL de la foto del testimoniante"
+                        className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0d40a5] outline-none"
+                      />
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
+
+          {/* ── Filter Options Editor (resources_filter) ── */}
+          {editingSection.sectionKey === "resources_filter" &&
+            (() => {
+              let opts: {
+                categories: string[];
+                productLines: string[];
+                dateOptions: string[];
+              } = { categories: [], productLines: [], dateOptions: [] };
+              try {
+                const p = JSON.parse(editingSection.content);
+                opts = {
+                  categories: Array.isArray(p.categories) ? p.categories : [],
+                  productLines: Array.isArray(p.productLines) ? p.productLines : [],
+                  dateOptions: Array.isArray(p.dateOptions) ? p.dateOptions : [],
+                };
+              } catch {}
+
+              const update = (next: typeof opts) =>
+                handleChange("content", JSON.stringify(next));
+
+              const EditableList = ({
+                label,
+                items,
+                onChange,
+              }: {
+                label: string;
+                items: string[];
+                onChange: (next: string[]) => void;
+              }) => (
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="text-xs font-medium text-gray-600">{label}</label>
+                    <button
+                      type="button"
+                      onClick={() => onChange([...items, ""])}
+                      className="flex items-center gap-1 text-xs text-[#0d40a5] hover:underline"
+                    >
+                      <Plus className="w-3 h-3" /> Añadir
+                    </button>
+                  </div>
+                  <div className="space-y-1">
+                    {items.map((item, i) => (
+                      <div key={i} className="flex gap-2 items-center">
+                        <input
+                          value={item}
+                          onChange={(e) => {
+                            const next = [...items];
+                            next[i] = e.target.value;
+                            onChange(next);
+                          }}
+                          className="flex-1 px-2 py-1.5 text-xs border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0d40a5] outline-none"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => onChange(items.filter((_, idx) => idx !== i))}
+                          className="p-1 text-gray-400 hover:text-red-500 rounded"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+
+              return (
+                <div className="space-y-5">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Opciones de filtros
+                  </label>
+                  <EditableList
+                    label="Categorías (primera = 'Todos')"
+                    items={opts.categories}
+                    onChange={(v) => update({ ...opts, categories: v })}
+                  />
+                  <EditableList
+                    label="Líneas de producto (primera = 'Todas')"
+                    items={opts.productLines}
+                    onChange={(v) => update({ ...opts, productLines: v })}
+                  />
+                  <EditableList
+                    label="Opciones de fecha"
+                    items={opts.dateOptions}
+                    onChange={(v) => update({ ...opts, dateOptions: v })}
+                  />
+                </div>
+              );
+            })()}
+
+          {/* ── Catalogs Editor (resources_catalogs) ── */}
+          {editingSection.sectionKey === "resources_catalogs" &&
+            (() => {
+              let cards: {
+                title: string;
+                version: string;
+                description: string;
+                fileSize: string;
+                fileIcon: string;
+                downloadUrl: string;
+              }[] = [];
+              try {
+                const p = JSON.parse(editingSection.content);
+                if (Array.isArray(p)) cards = p;
+              } catch {}
+              while (cards.length < 3) {
+                cards.push({
+                  title: "",
+                  version: "",
+                  description: "",
+                  fileSize: "",
+                  fileIcon: "picture_as_pdf",
+                  downloadUrl: "",
+                });
+              }
+
+              const update = (next: typeof cards) =>
+                handleChange("content", JSON.stringify(next));
+
+              return (
+                <div className="space-y-4">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Catálogos destacados (3 máx.)
+                  </label>
+                  {cards.map((card, i) => (
+                    <div
+                      key={i}
+                      className="border border-gray-200 rounded-lg p-4 space-y-2"
+                    >
+                      <span className="text-xs font-semibold text-gray-500 uppercase">
+                        Catálogo {i + 1}
+                      </span>
+                      <div className="grid grid-cols-2 gap-2">
+                        <input
+                          value={card.title}
+                          onChange={(e) => {
+                            const n = [...cards];
+                            n[i] = { ...n[i], title: e.target.value };
+                            update(n);
+                          }}
+                          placeholder="Título"
+                          className="px-2 py-1.5 text-xs border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0d40a5] outline-none"
+                        />
+                        <input
+                          value={card.version}
+                          onChange={(e) => {
+                            const n = [...cards];
+                            n[i] = { ...n[i], version: e.target.value };
+                            update(n);
+                          }}
+                          placeholder="Versión (ej: V2.1)"
+                          className="px-2 py-1.5 text-xs border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0d40a5] outline-none"
+                        />
+                      </div>
+                      <textarea
+                        rows={2}
+                        value={card.description}
+                        onChange={(e) => {
+                          const n = [...cards];
+                          n[i] = { ...n[i], description: e.target.value };
+                          update(n);
+                        }}
+                        placeholder="Descripción breve..."
+                        className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0d40a5] outline-none resize-none"
+                      />
+                      <div className="grid grid-cols-2 gap-2">
+                        <input
+                          value={card.fileSize}
+                          onChange={(e) => {
+                            const n = [...cards];
+                            n[i] = { ...n[i], fileSize: e.target.value };
+                            update(n);
+                          }}
+                          placeholder="Tamaño (ej: 18.5 MB)"
+                          className="px-2 py-1.5 text-xs border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0d40a5] outline-none"
+                        />
+                        <input
+                          value={card.fileIcon}
+                          onChange={(e) => {
+                            const n = [...cards];
+                            n[i] = { ...n[i], fileIcon: e.target.value };
+                            update(n);
+                          }}
+                          placeholder="Icono (picture_as_pdf)"
+                          className="px-2 py-1.5 text-xs border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0d40a5] outline-none"
+                        />
+                      </div>
+                      <input
+                        value={card.downloadUrl}
+                        onChange={(e) => {
+                          const n = [...cards];
+                          n[i] = { ...n[i], downloadUrl: e.target.value };
+                          update(n);
+                        }}
+                        placeholder="URL de descarga"
+                        className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0d40a5] outline-none"
+                      />
+                    </div>
+                  ))}
+                </div>
+              );
+            })()}
+
+          {/* ── TDS Table Editor (resources_table) ── */}
+          {editingSection.sectionKey === "resources_table" &&
+            (() => {
+              let rows: {
+                icon: string;
+                iconColor: string;
+                name: string;
+                reference: string;
+                category: string;
+                date: string;
+                downloadUrl: string;
+              }[] = [];
+              try {
+                const p = JSON.parse(editingSection.content);
+                if (Array.isArray(p)) rows = p;
+              } catch {}
+
+              const update = (next: typeof rows) =>
+                handleChange("content", JSON.stringify(next));
+
+              return (
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <label className="block text-sm font-medium text-gray-700">
+                      Filas TDS ({rows.length})
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        update([
+                          ...rows,
+                          {
+                            icon: "description",
+                            iconColor: "blue",
+                            name: "",
+                            reference: "",
+                            category: "",
+                            date: "",
+                            downloadUrl: "",
+                          },
+                        ])
+                      }
+                      className="flex items-center gap-1 text-xs text-[#0d40a5] hover:underline"
+                    >
+                      <Plus className="w-3 h-3" /> Añadir fila
+                    </button>
+                  </div>
+                  <div className="space-y-3">
+                    {rows.map((row, i) => (
+                      <div
+                        key={i}
+                        className="border border-gray-200 rounded-lg p-3 space-y-2"
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-semibold text-gray-500">
+                            Fila {i + 1}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => update(rows.filter((_, idx) => idx !== i))}
+                            className="text-xs text-red-500 hover:underline"
+                          >
+                            Eliminar
+                          </button>
+                        </div>
+                        <input
+                          value={row.name}
+                          onChange={(e) => {
+                            const n = [...rows];
+                            n[i] = { ...n[i], name: e.target.value };
+                            update(n);
+                          }}
+                          placeholder="Nombre del documento"
+                          className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0d40a5] outline-none"
+                        />
+                        <div className="grid grid-cols-2 gap-2">
+                          <input
+                            value={row.reference}
+                            onChange={(e) => {
+                              const n = [...rows];
+                              n[i] = { ...n[i], reference: e.target.value };
+                              update(n);
+                            }}
+                            placeholder="Referencia (TDS-001)"
+                            className="px-2 py-1.5 text-xs border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0d40a5] outline-none"
+                          />
+                          <input
+                            value={row.category}
+                            onChange={(e) => {
+                              const n = [...rows];
+                              n[i] = { ...n[i], category: e.target.value };
+                              update(n);
+                            }}
+                            placeholder="Categoría (CLÍNICO)"
+                            className="px-2 py-1.5 text-xs border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0d40a5] outline-none"
+                          />
+                          <input
+                            value={row.date}
+                            onChange={(e) => {
+                              const n = [...rows];
+                              n[i] = { ...n[i], date: e.target.value };
+                              update(n);
+                            }}
+                            placeholder="Fecha (12 Oct 2024)"
+                            className="px-2 py-1.5 text-xs border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0d40a5] outline-none"
+                          />
+                          <input
+                            value={row.downloadUrl}
+                            onChange={(e) => {
+                              const n = [...rows];
+                              n[i] = { ...n[i], downloadUrl: e.target.value };
+                              update(n);
+                            }}
+                            placeholder="URL descarga"
+                            className="px-2 py-1.5 text-xs border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0d40a5] outline-none"
+                          />
+                          <input
+                            value={row.icon}
+                            onChange={(e) => {
+                              const n = [...rows];
+                              n[i] = { ...n[i], icon: e.target.value };
+                              update(n);
+                            }}
+                            placeholder="Icono (picture_as_pdf)"
+                            className="px-2 py-1.5 text-xs border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0d40a5] outline-none"
+                          />
+                          <select
+                            value={row.iconColor}
+                            onChange={(e) => {
+                              const n = [...rows];
+                              n[i] = { ...n[i], iconColor: e.target.value };
+                              update(n);
+                            }}
+                            className="px-2 py-1.5 text-xs border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0d40a5] outline-none bg-white"
+                          >
+                            <option value="red">Rojo</option>
+                            <option value="green">Verde</option>
+                            <option value="blue">Azul</option>
+                            <option value="yellow">Amarillo</option>
+                            <option value="purple">Morado</option>
+                          </select>
                         </div>
                       </div>
                     ))}
@@ -1152,6 +2543,44 @@ export function SectionEditModal({
               placeholder="URL del enlace (opcional)"
             />
           </div>
+
+          {/* Botón 2 */}
+          {[
+            "products_hero",
+            "home_video_hero",
+            "about_hero",
+            "products_cta",
+            "categories_hero",
+            "resources_hero",
+            "resources_cta",
+          ].includes(editingSection.sectionKey) && (
+            <>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Texto Botón 2
+                </label>
+                <input
+                  type="text"
+                  value={editingSection.button2Text || ""}
+                  onChange={(e) => handleChange("button2Text", e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0d40a5] focus:border-transparent outline-none"
+                  placeholder="Ej: La Ciencia"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Link Botón 2
+                </label>
+                <input
+                  type="text"
+                  value={editingSection.button2Link || ""}
+                  onChange={(e) => handleChange("button2Link", e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0d40a5] focus:border-transparent outline-none"
+                  placeholder="/about"
+                />
+              </div>
+            </>
+          )}
 
           {/* Orden */}
           <div>

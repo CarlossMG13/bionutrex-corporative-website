@@ -9,23 +9,41 @@ import {
   Navigation2,
   Package,
   ShoppingCart,
+  ShoppingBag,
   UserRound,
   UsersRound,
+  Grid2X2,
+  BookOpen,
 } from "lucide-react";
 
 const menuGroups = [
   {
     label: "PÁGINAS",
     items: [
-      { label: "Dashboard", path: "/admin/dashboard", icon: LayoutDashboard },
       { label: "Home Editor", path: "/admin/home", icon: Home },
       { label: "About Editor", path: "/admin/about", icon: UsersRound },
-      { label: "Datos Clínicos", path: "/admin/clinical", icon: FlaskConical },
+      {
+        label: "Productos Editor",
+        path: "/admin/products-editor",
+        icon: ShoppingBag,
+      },
+      {
+        label: "Categorías Editor",
+        path: "/admin/categories-editor",
+        icon: Grid2X2,
+      },
+      {
+        label: "Recursos Editor",
+        path: "/admin/resources-editor",
+        icon: BookOpen,
+      },
     ],
   },
   {
     label: "GLOBAL",
     items: [
+      { label: "Dashboard", path: "/admin/dashboard", icon: LayoutDashboard },
+      { label: "Datos Clínicos", path: "/admin/clinical", icon: FlaskConical },
       { label: "Navbar & Footer", path: "/admin/global", icon: Navigation2 },
       { label: "Media Library", path: "/admin/media", icon: Image },
       { label: "Usuarios", path: "/admin/users", icon: Users },
