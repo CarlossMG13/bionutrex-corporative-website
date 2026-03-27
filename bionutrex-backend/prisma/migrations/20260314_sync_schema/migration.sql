@@ -1,19 +1,19 @@
-ALTER TABLE "home_sections" ADD COLUMN "titleSegments" TEXT;
-ALTER TABLE "home_sections" ADD COLUMN "accentColor" TEXT;
-ALTER TABLE "home_sections" ADD COLUMN "mediaType" TEXT NOT NULL DEFAULT 'image';
-ALTER TABLE "home_sections" ADD COLUMN "videoUrl" TEXT;
-ALTER TABLE "home_sections" ADD COLUMN "videoMuted" BOOLEAN NOT NULL DEFAULT true;
+ALTER TABLE "home_sections" ADD COLUMN IF NOT EXISTS "titleSegments" TEXT;
+ALTER TABLE "home_sections" ADD COLUMN IF NOT EXISTS "accentColor" TEXT;
+ALTER TABLE "home_sections" ADD COLUMN IF NOT EXISTS "mediaType" TEXT NOT NULL DEFAULT 'image';
+ALTER TABLE "home_sections" ADD COLUMN IF NOT EXISTS "videoUrl" TEXT;
+ALTER TABLE "home_sections" ADD COLUMN IF NOT EXISTS "videoMuted" BOOLEAN NOT NULL DEFAULT true;
 
 -- Add missing columns to sliders table
-ALTER TABLE "sliders" ADD COLUMN "titleSegments" TEXT;
-ALTER TABLE "sliders" ADD COLUMN "label" TEXT;
-ALTER TABLE "sliders" ADD COLUMN "stats" TEXT;
-ALTER TABLE "sliders" ADD COLUMN "button2Text" TEXT;
-ALTER TABLE "sliders" ADD COLUMN "button2Link" TEXT;
-ALTER TABLE "sliders" ADD COLUMN "accentColor" TEXT NOT NULL DEFAULT '#00e5ff';
-ALTER TABLE "sliders" ADD COLUMN "videoUrl" TEXT;
-ALTER TABLE "sliders" ADD COLUMN "videoMuted" BOOLEAN NOT NULL DEFAULT true;
-ALTER TABLE "sliders" ADD COLUMN "mediaType" TEXT NOT NULL DEFAULT 'image';
+ALTER TABLE "sliders" ADD COLUMN IF NOT EXISTS "titleSegments" TEXT;
+ALTER TABLE "sliders" ADD COLUMN IF NOT EXISTS "label" TEXT;
+ALTER TABLE "sliders" ADD COLUMN IF NOT EXISTS "stats" TEXT;
+ALTER TABLE "sliders" ADD COLUMN IF NOT EXISTS "button2Text" TEXT;
+ALTER TABLE "sliders" ADD COLUMN IF NOT EXISTS "button2Link" TEXT;
+ALTER TABLE "sliders" ADD COLUMN IF NOT EXISTS "accentColor" TEXT NOT NULL DEFAULT '#00e5ff';
+ALTER TABLE "sliders" ADD COLUMN IF NOT EXISTS "videoUrl" TEXT;
+ALTER TABLE "sliders" ADD COLUMN IF NOT EXISTS "videoMuted" BOOLEAN NOT NULL DEFAULT true;
+ALTER TABLE "sliders" ADD COLUMN IF NOT EXISTS "mediaType" TEXT NOT NULL DEFAULT 'image';
 
 -- Create categories table if it doesn't exist
 CREATE TABLE IF NOT EXISTS "categories" (
@@ -53,6 +53,40 @@ CREATE TABLE IF NOT EXISTS "product_variants" (
     "productId" TEXT NOT NULL,
     CONSTRAINT "product_variants_productId_fkey" FOREIGN KEY ("productId") REFERENCES "products" ("id") ON DELETE CASCADE ON UPDATE CASCADE
 );
+
+-- Ensure column and foreign key exist when table already present
+ALTER TABLE "products" ADD COLUMN IF NOT EXISTS "categoryId" TEXT;
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.table_constraints tc
+        JOIN information_schema.key_column_usage kcu ON tc.constraint_name = kcu.constraint_name
+        WHERE tc.constraint_type = 'FOREIGN KEY' AND tc.constraint_name = 'products_categoryId_fkey'
+    ) THEN
+        BEGIN
+            -- Only add constraint if the column exists
+            IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='products' AND column_name='categoryId') THEN
+                ALTER TABLE "products" ADD CONSTRAINT "products_categoryId_fkey" FOREIGN KEY ("categoryId") REFERENCES "categories" ("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+            END IF;
+        END;
+    END IF;
+END$$;
+
+ALTER TABLE "product_variants" ADD COLUMN IF NOT EXISTS "productId" TEXT;
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.table_constraints tc
+        JOIN information_schema.key_column_usage kcu ON tc.constraint_name = kcu.constraint_name
+        WHERE tc.constraint_type = 'FOREIGN KEY' AND tc.constraint_name = 'product_variants_productId_fkey'
+    ) THEN
+        BEGIN
+            IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='product_variants' AND column_name='productId') THEN
+                ALTER TABLE "product_variants" ADD CONSTRAINT "product_variants_productId_fkey" FOREIGN KEY ("productId") REFERENCES "products" ("id") ON DELETE CASCADE ON UPDATE CASCADE;
+            END IF;
+        END;
+    END IF;
+END$$;
 
 -- Create indexes for better performance
 CREATE INDEX IF NOT EXISTS "products_categoryId_idx" ON "products"("categoryId");
