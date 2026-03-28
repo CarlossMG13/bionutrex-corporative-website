@@ -302,27 +302,35 @@ export interface MediaFile {
        throw error;
      }
    }, [loadFiles]);
-/*     Eliminar archivo
- */   const deleteFile = useCallback(async (fileId: string) => {
-     try {
-       const file = state.files.find(f => f.id === fileId);
-       if (!file) {
-         throw new Error('Archivo no encontrado');
-       }
-       
-        /* Aquí iría la lógica para eliminar del servidor
-        Por ahora solo eliminamos del estado local */
-       const updatedFiles = state.files.filter(f => f.id !== fileId);
-       updateState({ files: updatedFiles });
-       
-     } catch (error) {
-       console.error('Error deleting file:', error);
-       updateState({ 
-         error: error instanceof Error ? error.message : 'Error al eliminar archivo'
-       });
-       throw error;
-     }
-   }, [state.files]);
+/*     Eliminar archivo del servidor y del estado local */
+const deleteFile = useCallback(async (fileId: string) => {
+  try {
+    const file = state.files.find(f => f.id === fileId);
+    if (!file) {
+      throw new Error('Archivo no encontrado');
+    }
+
+    // Realizar solicitud al backend para eliminar el archivo
+    const response = await fetch(`${BACKEND_URL}/api/uploads/${fileId}`, {
+      method: 'DELETE',
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ error: 'Error desconocido' }));
+      throw new Error(errorData.error || 'Error al eliminar archivo en el servidor');
+    }
+
+    // Actualizar el estado local
+    const updatedFiles = state.files.filter(f => f.id !== fileId);
+    updateState({ files: updatedFiles });
+  } catch (error) {
+    console.error('Error deleting file:', error);
+    updateState({ 
+      error: error instanceof Error ? error.message : 'Error al eliminar archivo'
+    });
+    throw error;
+  }
+}, [state.files]);
 /*     Eliminar múltiples archivos
  */   const deleteFiles = useCallback(async (fileIds: string[]) => {
      try {

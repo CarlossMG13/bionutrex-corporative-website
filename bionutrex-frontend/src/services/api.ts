@@ -120,4 +120,10 @@ export const productAPI = {
   delete: (id: string) => api.delete(`/products/${id}`),
 };
 
+export const categoryAPI = {
+  getAll: () => api.get("/categories"),
+  create: (data: { name: string; slug: string }) =>
+    api.post("/categories", data),
+};
+
 export default api;

@@ -1,4 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { productAPI, categoryAPI } from "@/services/api";
+import type { Product, Category } from "@/types";
 import {
   Plus,
   Search,
@@ -11,99 +13,134 @@ import {
   ShoppingCart,
   TrendingUp,
 } from "lucide-react";
-
-interface Product {
-  id: string;
-  name: string;
-  description: string;
-  category: string;
-  price: number;
-  stock: number;
-  image: string;
-  status: "active" | "inactive" | "draft";
-  featured: boolean;
-  createdAt: string;
-}
-
-const mockProducts: Product[] = [
-  {
-    id: "1",
-    name: "Omega-3 Premium",
-    description: "Suplemento de ácidos grasos esenciales de alta pureza",
-    category: "Suplementos",
-    price: 45.99,
-    stock: 150,
-    image: "/api/placeholder/200/200",
-    status: "active",
-    featured: true,
-    createdAt: "2024-01-15",
-  },
-  {
-    id: "2",
-    name: "Vitamina D3 Complex",
-    description: "Vitamina D3 con cofactores para mejor absorción",
-    category: "Vitaminas",
-    price: 32.50,
-    stock: 89,
-    image: "/api/placeholder/200/200",
-    status: "active",
-    featured: false,
-    createdAt: "2024-01-10",
-  },
-  {
-    id: "3",
-    name: "Probióticos Avanzados",
-    description: "Fórmula con 15 cepas probióticas diferentes",
-    category: "Digestión",
-    price: 58.75,
-    stock: 234,
-    image: "/api/placeholder/200/200",
-    status: "draft",
-    featured: true,
-    createdAt: "2024-01-08",
-  },
-];
-
-const categories = ["Todos", "Suplementos", "Vitaminas", "Digestión", "Antioxidantes"];
+import ProductFormModal from "./components/ProductFormModal";
 
 export default function ProductCatalog() {
-  const [products, setProducts] = useState<Product[]>(mockProducts);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("Todos");
+  const [selectedCategoryId, setSelectedCategoryId] = useState("");
   const [showFilters, setShowFilters] = useState(false);
-  const [showAddModal, setShowAddModal] = useState(false);
+  const [showFormModal, setShowFormModal] = useState(false);
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const filteredProducts = products.filter((product) => {
-    const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         product.description.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = selectedCategory === "Todos" || product.category === selectedCategory;
-    return matchesSearch && matchesCategory;
-  });
+  // Fetch products and categories
+  useEffect(() => {
+    fetchProducts();
+    fetchCategories();
+  }, []);
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "active":
-        return "bg-green-100 text-green-800";
-      case "inactive":
-        return "bg-red-100 text-red-800";
-      case "draft":
-        return "bg-yellow-100 text-yellow-800";
-      default:
-        return "bg-gray-100 text-gray-800";
+  const fetchProducts = async () => {
+    try {
+      const response = await productAPI.getAllAdmin();
+      setProducts(response.data);
+    } catch (error) {
+      console.error("Error fetching products:", error);
     }
   };
 
-  const getStatusText = (status: string) => {
-    switch (status) {
-      case "active":
-        return "Activo";
-      case "inactive":
-        return "Inactivo";
-      case "draft":
-        return "Borrador";
-      default:
-        return status;
+  const fetchCategories = async () => {
+    try {
+      const response = await categoryAPI.getAll();
+      setCategories(response.data);
+    } catch (error) {
+      console.error("Error fetching categories:", error);
+      // Usar categorías de ejemplo si la API falla
+      setCategories([
+        { id: "1", name: "Suplementos", slug: "suplementos" },
+        { id: "2", name: "Vitaminas", slug: "vitaminas" },
+        { id: "3", name: "Digestión", slug: "digestion" },
+        { id: "4", name: "Antioxidantes", slug: "antioxidantes" },
+      ]);
     }
+  };
+
+  const handleCreateProduct = async (formData: FormData) => {
+    setIsLoading(true);
+    try {
+      console.log("Creating product with FormData:");
+      // Log para debugging
+      for (let [key, value] of formData.entries()) {
+        console.log(`${key}:`, value);
+      }
+      
+      const response = await productAPI.create(formData);
+      setProducts((prev) => [...prev, response.data]);
+      setShowFormModal(false);
+      alert("Producto creado exitosamente");
+    } catch (error: any) {
+      console.error("Error creating product:", error);
+      const errorMessage = error.response?.data?.details || error.response?.data?.error || error.message || "Error desconocido";
+      alert(`Error al crear el producto: ${errorMessage}`);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleUpdateProduct = async (formData: FormData) => {
+    if (!editingProduct) return;
+    setIsLoading(true);
+    try {
+      console.log("Updating product with FormData:");
+      // Log para debugging
+      for (let [key, value] of formData.entries()) {
+        console.log(`${key}:`, value);
+      }
+      
+      const response = await productAPI.update(editingProduct.id, formData);
+      setProducts((prev) =>
+        prev.map((p) => (p.id === editingProduct.id ? response.data : p))
+      );
+      setShowFormModal(false);
+      setEditingProduct(null);
+      alert("Producto actualizado exitosamente");
+    } catch (error: any) {
+      console.error("Error updating product:", error);
+      const errorMessage = error.response?.data?.details || error.response?.data?.error || error.message || "Error desconocido";
+      alert(`Error al actualizar el producto: ${errorMessage}`);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleDeleteProduct = async (id: string) => {
+    if (!window.confirm("¿Estás seguro de que deseas eliminar este producto?")) {
+      return;
+    }
+    try {
+      await productAPI.delete(id);
+      setProducts((prev) => prev.filter((p) => p.id !== id));
+      alert("Producto eliminado exitosamente");
+    } catch (error) {
+      console.error("Error deleting product:", error);
+      alert("Error al eliminar el producto");
+    }
+  };
+
+  const filteredProducts = products.filter((product) => {
+    const matchesSearch = product.name
+      .toLowerCase()
+      .includes(searchTerm.toLowerCase()) ||
+      (product.description?.toLowerCase().includes(searchTerm.toLowerCase()) ??
+        false);
+    const matchesCategory =
+      !selectedCategoryId || product.categoryId === selectedCategoryId;
+    return matchesSearch && matchesCategory;
+  });
+
+  const getTotalStock = () => {
+    return products.reduce((acc, p) => {
+      const stock = p.variants?.reduce((sum, v) => sum + v.stock, 0) || 0;
+      return acc + stock;
+    }, 0);
+  };
+
+  const getInventoryValue = () => {
+    return products.reduce((acc, p) => {
+      const value = p.variants?.reduce((sum, v) => sum + v.price * v.stock, 0) || 0;
+      return acc + value;
+    }, 0);
   };
 
   return (
@@ -117,7 +154,10 @@ export default function ProductCatalog() {
           </p>
         </div>
         <button
-          onClick={() => setShowAddModal(true)}
+          onClick={() => {
+            setEditingProduct(null);
+            setShowFormModal(true);
+          }}
           className="flex items-center gap-2 px-4 py-2 bg-[#0d40a5] text-white rounded-lg hover:bg-[#0d40a5]/90 transition-colors"
         >
           <Plus className="w-4 h-4" />
@@ -146,7 +186,7 @@ export default function ProductCatalog() {
             <div>
               <p className="text-sm text-gray-600">Destacados</p>
               <p className="text-2xl font-bold text-gray-900">
-                {products.filter(p => p.featured).length}
+                {products.filter((p) => p.featured).length}
               </p>
             </div>
           </div>
@@ -158,9 +198,7 @@ export default function ProductCatalog() {
             </div>
             <div>
               <p className="text-sm text-gray-600">Stock Total</p>
-              <p className="text-2xl font-bold text-gray-900">
-                {products.reduce((acc, p) => acc + p.stock, 0)}
-              </p>
+              <p className="text-2xl font-bold text-gray-900">{getTotalStock()}</p>
             </div>
           </div>
         </div>
@@ -172,7 +210,7 @@ export default function ProductCatalog() {
             <div>
               <p className="text-sm text-gray-600">Valor Inventario</p>
               <p className="text-2xl font-bold text-gray-900">
-                ${products.reduce((acc, p) => acc + (p.price * p.stock), 0).toFixed(2)}
+                ${getInventoryValue().toFixed(2)}
               </p>
             </div>
           </div>
@@ -194,13 +232,14 @@ export default function ProductCatalog() {
           </div>
           <div className="flex gap-2">
             <select
-              value={selectedCategory}
-              onChange={(e) => setSelectedCategory(e.target.value)}
+              value={selectedCategoryId}
+              onChange={(e) => setSelectedCategoryId(e.target.value)}
               className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0d40a5] focus:border-[#0d40a5]"
             >
-              {categories.map(category => (
-                <option key={category} value={category}>
-                  {category}
+              <option value="">Todas las categorías</option>
+              {categories.map((category) => (
+                <option key={category.id} value={category.id}>
+                  {category.name}
                 </option>
               ))}
             </select>
@@ -224,9 +263,13 @@ export default function ProductCatalog() {
           >
             <div className="relative">
               <img
-                src={product.image}
+                src={product.imageUrl}
                 alt={product.name}
                 className="w-full h-48 object-cover"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src =
+                    "https://via.placeholder.com/300x200?text=Sin+imagen";
+                }}
               />
               {product.featured && (
                 <div className="absolute top-2 left-2">
@@ -236,38 +279,87 @@ export default function ProductCatalog() {
                   </span>
                 </div>
               )}
-              <div className="absolute top-2 right-2">
-                <span className={`px-2 py-1 text-xs rounded-full ${getStatusColor(product.status)}`}>
-                  {getStatusText(product.status)}
-                </span>
-              </div>
+              {product.badge && (
+                <div className="absolute top-2 right-2">
+                  <span
+                    className="text-white px-2 py-1 text-xs rounded-full"
+                    style={{ backgroundColor: product.badgeColor }}
+                  >
+                    {product.badge}
+                  </span>
+                </div>
+              )}
             </div>
-            
+
             <div className="p-4">
               <h3 className="font-semibold text-gray-900 mb-1">{product.name}</h3>
-              <p className="text-sm text-gray-600 mb-3 line-clamp-2">{product.description}</p>
-              
+              <p className="text-sm text-gray-600 mb-3 line-clamp-2">
+                {product.description || "Sin descripción"}
+              </p>
+
               <div className="flex justify-between items-center mb-3">
-                <span className="text-lg font-bold text-[#0d40a5]">
-                  ${product.price}
-                </span>
-                <span className="text-sm text-gray-500">
-                  Stock: {product.stock}
-                </span>
+                <div>
+                  {product.variants && product.variants.length > 0 && (
+                    <span className="text-lg font-bold text-[#0d40a5]">
+                      ${product.variants[0].price}
+                    </span>
+                  )}
+                  <div className="flex items-center gap-1 mt-1">
+                    {[...Array(5)].map((_, i) => (
+                      <Star
+                        key={i}
+                        className={`w-3 h-3 ${
+                          i < Math.round(product.rating || 5)
+                            ? "fill-yellow-400 text-yellow-400"
+                            : "text-gray-300"
+                        }`}
+                      />
+                    ))}
+                    <span className="text-xs text-gray-500 ml-1">
+                      ({product.reviewCount || 0})
+                    </span>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <span className="text-sm text-gray-500">
+                    Stock:{" "}
+                    {product.variants?.reduce((sum, v) => sum + v.stock, 0) || 0}
+                  </span>
+                  <div className="mt-1">
+                    <span
+                      className={`px-2 py-1 text-xs rounded-full ${
+                        product.active
+                          ? "bg-green-100 text-green-800"
+                          : "bg-red-100 text-red-800"
+                      }`}
+                    >
+                      {product.active ? "Activo" : "Inactivo"}
+                    </span>
+                  </div>
+                </div>
               </div>
-              
-              <div className="flex justify-between items-center">
+
+              <div className="flex justify-between items-center pt-3 border-t">
                 <span className="text-xs text-gray-500">
-                  {product.category}
+                  {product.category?.name || "Sin categoría"}
                 </span>
                 <div className="flex gap-1">
                   <button className="p-1.5 text-gray-400 hover:text-blue-600 transition-colors">
                     <Eye className="w-4 h-4" />
                   </button>
-                  <button className="p-1.5 text-gray-400 hover:text-green-600 transition-colors">
+                  <button
+                    onClick={() => {
+                      setEditingProduct(product);
+                      setShowFormModal(true);
+                    }}
+                    className="p-1.5 text-gray-400 hover:text-green-600 transition-colors"
+                  >
                     <Edit className="w-4 h-4" />
                   </button>
-                  <button className="p-1.5 text-gray-400 hover:text-red-600 transition-colors">
+                  <button
+                    onClick={() => handleDeleteProduct(product.id)}
+                    className="p-1.5 text-gray-400 hover:text-red-600 transition-colors"
+                  >
                     <Trash2 className="w-4 h-4" />
                   </button>
                 </div>
@@ -288,13 +380,30 @@ export default function ProductCatalog() {
             Intenta ajustar los filtros o crea un nuevo producto
           </p>
           <button
-            onClick={() => setShowAddModal(true)}
+            onClick={() => {
+              setEditingProduct(null);
+              setShowFormModal(true);
+            }}
             className="inline-flex items-center gap-2 px-4 py-2 bg-[#0d40a5] text-white rounded-lg hover:bg-[#0d40a5]/90 transition-colors"
           >
             <Plus className="w-4 h-4" />
             Crear Producto
           </button>
         </div>
+      )}
+
+      {/* Form Modal */}
+      {showFormModal && (
+        <ProductFormModal
+          onClose={() => {
+            setShowFormModal(false);
+            setEditingProduct(null);
+          }}
+          onSubmit={editingProduct ? handleUpdateProduct : handleCreateProduct}
+          product={editingProduct || undefined}
+          categories={categories}
+          isLoading={isLoading}
+        />
       )}
     </div>
   );
