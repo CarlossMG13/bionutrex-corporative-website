@@ -5,6 +5,7 @@ import type {
   BlogPost,
   AuthResponse,
   Product,
+  TechnicalResource,
 } from "@/types";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001/api";
@@ -109,6 +110,7 @@ export const productAPI = {
   getAll: () => api.get<Product[]>("/products"),
   getAllAdmin: () => api.get<Product[]>("/products/admin/all"),
   getFeatured: () => api.get<Product[]>("/products/featured"),
+  getById: (id: string) => api.get<Product>(`/products/${id}`),
   create: (formData: FormData) =>
     api.post<Product>("/products", formData, {
       headers: { "Content-Type": "multipart/form-data" },
@@ -124,6 +126,20 @@ export const categoryAPI = {
   getAll: () => api.get("/categories"),
   create: (data: { name: string; slug: string }) =>
     api.post("/categories", data),
+};
+
+export const technicalResourceAPI = {
+  getAll: () => api.get<TechnicalResource[]>("/technical-resources"),
+  getAllAdmin: () => api.get<TechnicalResource[]>("/technical-resources/admin/all"),
+  create: (formData: FormData) =>
+    api.post<TechnicalResource>("/technical-resources", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    }),
+  update: (id: string, formData: FormData) =>
+    api.put<TechnicalResource>(`/technical-resources/${id}`, formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    }),
+  delete: (id: string) => api.delete(`/technical-resources/${id}`),
 };
 
 export default api;

@@ -112,9 +112,13 @@ model Product {
   imageUrl      String
   badge         String?
   badgeColor    String?          @default("#0d40a5")
-  rating        Float            @default(5.0)
-  reviewCount   Int              @default(0)
-  featured      Boolean          @default(false)
+  rating          Float            @default(5.0)
+  reviewCount     Int              @default(0)
+  images          String?          @db.Text
+  ingredients     String?          @db.Text
+  longDescription String?          @db.Text
+  features        String?          @db.Text
+  featured        Boolean          @default(false)
   featuredOrder Int              @default(0)
   active        Boolean          @default(true)
   createdAt     DateTime         @default(now())
@@ -149,10 +153,28 @@ model ProductVariant {
 
 model Category {
   id        String    @id @default(cuid())
-  name      String   
+  name      String
   slug      String    @unique
- 
+
   products  Product[]
 
   @@map("categories")
+}
+
+model TechnicalResource {
+  id          String   @id @default(cuid())
+  title       String
+  reference   String?
+  category    String
+  productLine String?
+  description String?
+  fileUrl     String?
+  icon        String   @default("description")
+  iconColor   String   @default("blue")
+  active      Boolean  @default(true)
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("technical_resources")
 }

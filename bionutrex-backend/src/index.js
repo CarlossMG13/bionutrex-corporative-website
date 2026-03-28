@@ -17,6 +17,7 @@ import homeSectionRoutes from "./routes/homeSections.js";
 import blogPostRoutes from "./routes/blogPosts.js";
 import productRoutes from "./routes/products.js";
 import categoryRoutes from "./routes/categories.js";
+import technicalResourceRoutes from "./routes/technicalResources.js";
 console.log("✅ Routes imported successfully");
 
 // ES modules setup
@@ -113,6 +114,7 @@ app.use("/api/home-sections", homeSectionRoutes);
 app.use("/api/blog-posts", blogPostRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/categories", categoryRoutes);
+app.use("/api/technical-resources", technicalResourceRoutes);
 console.log("✅ All routes registered");
 
 // Health check

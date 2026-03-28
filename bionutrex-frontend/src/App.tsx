@@ -15,6 +15,8 @@ import Login from "@/pages/admin/Login";
 import About from "./pages/About";
 import Products from "./pages/Products";
 import Categories from "./pages/Categories";
+import Catalog from "./pages/Catalog";
+import ProductDetail from "./pages/ProductDetail";
 
 // Admin pages
 import Dashboard from "@/pages/admin/Dashboard";
@@ -62,6 +64,8 @@ function AppContent() {
           <Route path="/products" element={<Products />} />
           <Route path="/categories" element={<Categories />} />
           <Route path="/resources" element={<Resources />} />
+          <Route path="/catalogo" element={<Catalog />} />
+          <Route path="/catalogo/:id" element={<ProductDetail />} />
 
           {/* Ruta de Login (sin layout de admin) */}
           <Route path="/admin/login" element={<Login />} />

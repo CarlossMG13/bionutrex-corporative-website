@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { homeSectionAPI } from "@/services/api";
-import type { HomeSection } from "@/types";
+import { homeSectionAPI, technicalResourceAPI } from "@/services/api";
+import type { HomeSection, TechnicalResource } from "@/types";
 import ResourcesHero from "@/components/resources/ResourcesHero";
 import ResourcesFilter from "@/components/resources/ResourcesFilter";
 import ResourcesCatalogs from "@/components/resources/ResourcesCatalogs";
@@ -9,6 +9,7 @@ import ResourcesCTA from "@/components/resources/ResourcesCTA";
 
 export default function Resources() {
   const [sections, setSections] = useState<Record<string, HomeSection>>({});
+  const [dbResources, setDbResources] = useState<TechnicalResource[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("");
   const [selectedProductLine, setSelectedProductLine] = useState("");
@@ -22,6 +23,10 @@ export default function Resources() {
       });
       setSections(map);
     });
+
+    technicalResourceAPI.getAll().then((res) => {
+      setDbResources(res.data);
+    }).catch(() => {});
   }, []);
 
   const filters = { searchQuery, selectedCategory, selectedProductLine };
@@ -34,14 +39,17 @@ export default function Resources() {
   };
 
   return (
-    <div className="w-full overflow-x-hidden bg-gray-50 min-h-screen">
-      <div className="max-w-7xl mx-auto px-6 lg:px-10 py-8 lg:py-12">
-        {sections.resources_hero && (
-          <ResourcesHero
-            section={sections.resources_hero}
-            searchProps={{ value: searchQuery, onChange: setSearchQuery }}
-          />
-        )}
+    <div className="w-full overflow-x-hidden min-h-screen" style={{ background: "#f8f9fb" }}>
+      {/* Hero — full bleed, no container */}
+      {sections.resources_hero && (
+        <ResourcesHero
+          section={sections.resources_hero}
+          searchProps={{ value: searchQuery, onChange: setSearchQuery }}
+        />
+      )}
+
+      {/* Rest of content — contained */}
+      <div className="max-w-7xl mx-auto px-6 lg:px-10 py-12 lg:py-16">
         {sections.resources_filter && (
           <ResourcesFilter
             section={sections.resources_filter}
@@ -57,9 +65,11 @@ export default function Resources() {
         {sections.resources_catalogs && (
           <ResourcesCatalogs section={sections.resources_catalogs} filters={filters} />
         )}
-        {sections.resources_table && (
-          <ResourcesTable section={sections.resources_table} filters={filters} />
-        )}
+        <ResourcesTable
+          section={sections.resources_table}
+          dbResources={dbResources}
+          filters={filters}
+        />
         {sections.resources_cta && (
           <ResourcesCTA section={sections.resources_cta} />
         )}

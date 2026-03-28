@@ -109,6 +109,22 @@ export interface Category {
   slug: string;
 }
 
+export interface TechnicalResource {
+  id: string;
+  title: string;
+  reference?: string;
+  category: string;
+  productLine?: string;
+  description?: string;
+  fileUrl?: string;
+  icon: string;
+  iconColor: string;
+  active: boolean;
+  order: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface Product {
   id: string;
   name: string;
@@ -118,6 +134,10 @@ export interface Product {
   badgeColor?: string;
   rating?: number;
   reviewCount?: number;
+  images?: string;
+  ingredients?: string;
+  longDescription?: string;
+  features?: string;
   featured: boolean;
   featuredOrder: number;
   active: boolean;
