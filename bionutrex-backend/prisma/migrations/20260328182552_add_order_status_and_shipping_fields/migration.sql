@@ -1,0 +1,7 @@
+-- AlterTable
+ALTER TABLE "orders" ADD COLUMN     "city" VARCHAR(100),
+ADD COLUMN     "phone" VARCHAR(20),
+ADD COLUMN     "state" VARCHAR(100),
+ADD COLUMN     "status" TEXT NOT NULL DEFAULT 'pending',
+ADD COLUMN     "zip" VARCHAR(20),
+ALTER COLUMN "address" SET DATA TYPE VARCHAR(255);

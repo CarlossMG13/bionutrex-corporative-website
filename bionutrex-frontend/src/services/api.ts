@@ -13,6 +13,7 @@ const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001/api";
 // Config Axios
 const api = axios.create({
   baseURL: API_URL,
+  withCredentials: true,
   headers: {
     "Content-Type": "application/json",
   },
@@ -140,6 +141,14 @@ export const technicalResourceAPI = {
       headers: { "Content-Type": "multipart/form-data" },
     }),
   delete: (id: string) => api.delete(`/technical-resources/${id}`),
+};
+
+export const cartAPI = {
+  getCart: () => api.get("/cart"),
+  addItem: (productId: string) => api.post(`/cart/add/${productId}`),
+  removeItem: (productId: string) => api.post(`/cart/remove/${productId}`),
+  deleteItem: (productId: string) => api.delete(`/cart/item/${productId}`),
+  clearCart: () => api.delete("/cart"),
 };
 
 export default api;

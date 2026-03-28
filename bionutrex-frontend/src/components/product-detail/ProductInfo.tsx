@@ -1,5 +1,6 @@
 import { Heart } from "lucide-react";
 import type { Product, ProductVariant } from "@/types";
+import { useCart } from "@/contexts/CartContext";
 
 interface Props {
   product: Product;
@@ -36,7 +37,9 @@ const TRUST_BADGES = [
 ];
 
 export function ProductInfo({ product, selectedVariant, onVariantSelect }: Props) {
+  const { addToCart } = useCart();
   const price = selectedVariant?.price ?? product.variants?.[0]?.price ?? 0;
+  const isOutOfStock = selectedVariant ? selectedVariant.stock === 0 : false;
 
   return (
     <div className="flex flex-col gap-6">
@@ -128,13 +131,18 @@ export function ProductInfo({ product, selectedVariant, onVariantSelect }: Props
       {/* CTAs */}
       <div className="flex gap-3">
         <button
-          className="flex-1 py-4 rounded-xl font-black text-white uppercase tracking-wider text-sm transition-all active:scale-95"
+          onClick={() => {
+            const variant = selectedVariant ?? product.variants?.[0];
+            if (variant) addToCart(product, variant);
+          }}
+          disabled={!selectedVariant && !product.variants?.length || isOutOfStock}
+          className="flex-1 py-4 rounded-xl font-black text-white uppercase tracking-wider text-sm transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
           style={{
             backgroundColor: "#0d40a5",
             boxShadow: "0 8px 24px rgba(13,64,165,0.3)",
           }}
         >
-          Agregar al carrito
+          {isOutOfStock ? "Agotado" : "Agregar al carrito"}
         </button>
         <button className="w-14 h-14 rounded-xl border-2 border-gray-200 flex items-center justify-center text-gray-400 hover:border-[#0d40a5] hover:text-[#0d40a5] transition-all active:scale-95">
           <Heart className="w-5 h-5" />

@@ -1,7 +1,9 @@
 import { useState, useEffect } from "react";
 import { Star, ShoppingCart } from "lucide-react";
+import { Link } from "react-router-dom";
 import { useHomeSections } from "@/contexts/HomeDataContext";
 import { productAPI } from "@/services/api";
+import { useCart } from "@/contexts/CartContext";
 import type { Product } from "@/types";
 
 const BACKEND_URL =
@@ -115,6 +117,7 @@ function Stars({ rating, count }: { rating: number; count: number }) {
 
 export default function QualitySection() {
   const { getSectionByKey } = useHomeSections();
+  const { addToCart } = useCart();
   const [products, setProducts] = useState<Product[]>(FALLBACK);
   const [loading, setLoading] = useState(true);
 
@@ -167,9 +170,10 @@ export default function QualitySection() {
                 ? Math.min(...product.variants.map((v) => v.price))
                 : null;
             return (
-              <div
+              <Link
                 key={product.id ?? index}
-                className="group relative bg-white border border-slate-100 p-6 transition-all duration-300 hover:border-[#00e5ff] rounded-2xl hover:shadow-xl"
+                to={`/catalogo/${product.id}`}
+                className="group relative bg-white border border-slate-100 p-6 transition-all duration-300 hover:border-[#00e5ff] rounded-2xl hover:shadow-xl flex flex-col"
               >
                 <div className="relative aspect-[4/5] mb-6 overflow-hidden bg-[#f6f6f8] rounded-xl">
                   <div
@@ -200,11 +204,19 @@ export default function QualitySection() {
                   <span className="text-2xl font-black text-black">
                     {minPrice != null ? `$${minPrice.toFixed(2)}` : ""}
                   </span>
-                  <button className="w-12 h-12 flex items-center justify-center bg-[#f6f6f8] hover:bg-[#00e5ff] hover:text-[#0d40a5] transition-all rounded-full border border-slate-200">
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      const variant = product.variants?.[0];
+                      if (variant) addToCart(product, variant);
+                    }}
+                    disabled={!product.variants?.length}
+                    className="w-12 h-12 flex items-center justify-center bg-[#f6f6f8] hover:bg-[#00e5ff] hover:text-[#0d40a5] transition-all rounded-full border border-slate-200 disabled:opacity-40 disabled:cursor-not-allowed"
+                  >
                     <ShoppingCart className="w-5 h-5" />
                   </button>
                 </div>
-              </div>
+              </Link>
             );
           })}
         </div>

@@ -8,6 +8,8 @@ import { Toaster } from "@/components/ui/sonner";
 import { useLenis } from "./hooks/useLenis";
 import { AdminProvider } from "@/contexts/AdminContext";
 import { HomeDataProvider } from "@/contexts/HomeDataContext";
+import { CartProvider } from "@/contexts/CartContext";
+import { CartDrawer } from "@/components/cart/CartDrawer";
 
 // Pages
 import Home from "@/pages/Home";
@@ -17,6 +19,8 @@ import Products from "./pages/Products";
 import Categories from "./pages/Categories";
 import Catalog from "./pages/Catalog";
 import ProductDetail from "./pages/ProductDetail";
+import Checkout from "./pages/Checkout";
+import CheckoutSuccess from "./pages/CheckoutSuccess";
 
 // Admin pages
 import Dashboard from "@/pages/admin/Dashboard";
@@ -31,6 +35,7 @@ import ProductsEditor from "./pages/admin/ProductsEditor";
 import CategoriesEditor from "./pages/admin/CategoriesEditor";
 import Resources from "./pages/Resources";
 import ResourcesEditor from "./pages/admin/ResourcesEditor";
+import OrdersManager from "./pages/admin/OrdersManager";
 
 /* import About from "@/pages/About"; */
 
@@ -50,11 +55,16 @@ function AppContent() {
   return (
     <div className="min-h-screen bg-[#EEEEEE] flex flex-col">
       {!isAdminRoute && <Navbar />}
+      {!isAdminRoute && (
+        <div className="pt-16 lg:pt-20">
+          <CartDrawer />
+        </div>
+      )}
       <main
         className={
           isAdminRoute
             ? "w-full"
-            : "home-page w-full overflow-x-hidden min-h-screen pt-20"
+            : "home-page w-full overflow-x-hidden min-h-screen"
         }
       >
         <Routes>
@@ -66,6 +76,8 @@ function AppContent() {
           <Route path="/resources" element={<Resources />} />
           <Route path="/catalogo" element={<Catalog />} />
           <Route path="/catalogo/:id" element={<ProductDetail />} />
+          <Route path="/checkout" element={<Checkout />} />
+          <Route path="/checkout/success" element={<CheckoutSuccess />} />
 
           {/* Ruta de Login (sin layout de admin) */}
           <Route path="/admin/login" element={<Login />} />
@@ -91,6 +103,7 @@ function AppContent() {
             <Route path="products-editor" element={<ProductsEditor />} />
             <Route path="categories-editor" element={<CategoriesEditor />} />
             <Route path="resources-editor" element={<ResourcesEditor />} />
+            <Route path="orders" element={<OrdersManager />} />
           </Route>
         </Routes>
       </main>
@@ -105,7 +118,9 @@ function App() {
     <Router>
       <HomeDataProvider>
         <AdminProvider>
-          <AppContent />
+          <CartProvider>
+            <AppContent />
+          </CartProvider>
         </AdminProvider>
       </HomeDataProvider>
     </Router>

@@ -1,5 +1,6 @@
 import express from "express";
 import cors from "cors";
+import session from "express-session";
 import dotenv from "dotenv";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -18,6 +19,9 @@ import blogPostRoutes from "./routes/blogPosts.js";
 import productRoutes from "./routes/products.js";
 import categoryRoutes from "./routes/categories.js";
 import technicalResourceRoutes from "./routes/technicalResources.js";
+import cartRoutes from "./routes/cart.js";
+import checkoutRoutes from "./routes/checkout.js";
+import adminOrdersRoutes from "./routes/admin-orders.js";
 console.log("✅ Routes imported successfully");
 
 // ES modules setup
@@ -37,9 +41,22 @@ console.log(`🔧 Creating Express app on port ${PORT}...`);
 
 // Middleware
 console.log("📝 Setting up middleware...");
-app.use(cors());
+app.use(cors({
+  origin: process.env.FRONTEND_URL || "http://localhost:5173",
+  credentials: true,
+}));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(session({
+  secret: process.env.SESSION_SECRET || "bionutrex-secret-key",
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    secure: false,
+    httpOnly: true,
+    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 días
+  },
+}));
 console.log("✅ Middleware configured");
 
 // Configuración de multer para subida de archivos
@@ -115,6 +132,9 @@ app.use("/api/blog-posts", blogPostRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/categories", categoryRoutes);
 app.use("/api/technical-resources", technicalResourceRoutes);
+app.use("/api/cart", cartRoutes);
+app.use("/api/checkout", checkoutRoutes);
+app.use("/api/admin/orders", adminOrdersRoutes);
 console.log("✅ All routes registered");
 
 // Health check

@@ -180,9 +180,14 @@ model Order {
   user            User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
   fullName        String      @db.VarChar(255)
   email           String
-  address         String      @db.VarChar(150)
+  phone           String?     @db.VarChar(20)
+  address         String      @db.VarChar(255)
+  city            String?     @db.VarChar(100)
+  state           String?     @db.VarChar(100)
+  zip             String?     @db.VarChar(20)
   total           Decimal?    @db.Decimal(10, 2)
   paymentIntentId String?     @db.VarChar(255)
+  status          String      @default("pending")
   createdAt       DateTime    @default(now())
   updatedAt       DateTime    @updatedAt
   paid            Boolean     @default(false)

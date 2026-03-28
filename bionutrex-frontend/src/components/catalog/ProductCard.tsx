@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Heart, ShoppingCart } from "lucide-react";
 import type { Product } from "@/types";
+import { useCart } from "@/contexts/CartContext";
 
 const BACKEND_URL =
   (import.meta.env.VITE_API_URL as string | undefined)?.replace("/api", "") ||
@@ -20,8 +21,10 @@ export function getMinPrice(product: Product): number {
 
 export function ProductCard({ product }: { product: Product }) {
   const [wished, setWished] = useState(false);
+  const { addToCart } = useCart();
   const minPrice = getMinPrice(product);
   const imgUrl = resolveUrl(product.imageUrl);
+  const firstVariant = product.variants?.[0];
 
   return (
     <Link
@@ -85,8 +88,12 @@ export function ProductCard({ product }: { product: Product }) {
             {minPrice > 0 ? `$${minPrice.toFixed(2)}` : "—"}
           </span>
           <button
-            onClick={(e) => e.preventDefault()}
-            className="flex items-center justify-center w-9 h-9 rounded-xl text-white transition-all active:scale-95"
+            onClick={(e) => {
+              e.preventDefault();
+              if (firstVariant) addToCart(product, firstVariant);
+            }}
+            disabled={!firstVariant}
+            className="flex items-center justify-center w-9 h-9 rounded-xl text-white transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed"
             style={{
               backgroundColor: "#0d40a5",
               boxShadow: "0 4px 12px rgba(13,64,165,0.3)",

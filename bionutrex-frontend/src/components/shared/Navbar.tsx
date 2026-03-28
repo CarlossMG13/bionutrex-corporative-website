@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { useState, useEffect, useRef } from "react";
 import { Menu, X, Zap, Search, User, ShoppingCart } from "lucide-react";
 import { NavMegaMenu } from "./NavMegaMenu";
+import { useCart } from "@/contexts/CartContext";
 
 export function Navbar({
   isPreview = false,
@@ -11,6 +12,7 @@ export function Navbar({
   isPreview?: boolean;
   previewDevice?: "mobile" | "tablet" | "desktop";
 }) {
+  const { toggleCart, cartCount } = useCart();
   const [isOpen, setIsOpen] = useState(false);
   const [isVisible, setIsVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
@@ -89,11 +91,13 @@ export function Navbar({
               <button className="text-slate-600 hover:text-[#00e5ff] transition-colors">
                 <Search className="w-5 h-5" />
               </button>
-              <button className="relative text-slate-600 hover:text-[#00e5ff] transition-colors">
+              <button onClick={toggleCart} className="relative text-slate-600 hover:text-[#00e5ff] transition-colors">
                 <ShoppingCart className="w-5 h-5" />
-                <span className="absolute -top-1 -right-1 bg-[#0d40a5] text-white text-[9px] font-black px-1.5 rounded-full leading-4">
-                  2
-                </span>
+                {cartCount > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-[#0d40a5] text-white text-[9px] font-black px-1.5 rounded-full leading-4">
+                    {cartCount}
+                  </span>
+                )}
               </button>
             </div>
           </div>
@@ -159,11 +163,13 @@ export function Navbar({
               <button className="text-slate-600 hover:text-[#00e5ff] transition-colors cursor-pointer">
                 <User className="w-5 h-5" />
               </button>
-              <button className="relative text-slate-600 hover:text-[#00e5ff] transition-colors cursor-pointer">
+              <button onClick={toggleCart} className="relative text-slate-600 hover:text-[#00e5ff] transition-colors cursor-pointer">
                 <ShoppingCart className="w-5 h-5" />
-                <span className="absolute -top-1 -right-1 bg-[#0d40a5] text-white text-[9px] font-black px-1.5 rounded-full leading-4">
-                  2
-                </span>
+                {cartCount > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-[#0d40a5] text-white text-[9px] font-black px-1.5 rounded-full leading-4">
+                    {cartCount}
+                  </span>
+                )}
               </button>
             </div>
           </div>
@@ -227,12 +233,14 @@ export function Navbar({
               <User className="w-5 h-5" />
               Account
             </button>
-            <button className="text-white hover:text-[#00e5ff] transition-colors flex items-center gap-2 text-xs font-extrabold tracking-widest uppercase">
+            <button onClick={toggleCart} className="text-white hover:text-[#00e5ff] transition-colors flex items-center gap-2 text-xs font-extrabold tracking-widest uppercase">
               <ShoppingCart className="w-5 h-5" />
               Cart
-              <span className="bg-[#00e5ff] text-[#0d40a5] text-[9px] font-black px-1.5 rounded-full leading-4">
-                2
-              </span>
+              {cartCount > 0 && (
+                <span className="bg-[#00e5ff] text-[#0d40a5] text-[9px] font-black px-1.5 rounded-full leading-4">
+                  {cartCount}
+                </span>
+              )}
             </button>
           </div>
         </nav>
