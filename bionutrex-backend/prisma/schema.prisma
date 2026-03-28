@@ -109,9 +109,13 @@ model Product {
   imageUrl      String
   badge         String?
   badgeColor    String?          @default("#0d40a5")
-  rating        Float            @default(5.0)
-  reviewCount   Int              @default(0)
-  featured      Boolean          @default(false)
+  rating          Float            @default(5.0)
+  reviewCount     Int              @default(0)
+  images          String?          @db.Text
+  ingredients     String?          @db.Text
+  longDescription String?          @db.Text
+  features        String?          @db.Text
+  featured        Boolean          @default(false)
   featuredOrder Int              @default(0)
   active        Boolean          @default(true)
   createdAt     DateTime         @default(now())
@@ -144,10 +148,10 @@ model ProductVariant {
 }
 
 model Category {
-  id       String    @id @default(cuid())
-  name     String
-  slug     String    @unique
-  products Product[]
+  id        String    @id @default(cuid())
+  name      String
+  slug      String    @unique
+  products  Product[]
 
   @@map("categories")
 }
@@ -160,7 +164,7 @@ model User {
   phone         String?
   image         String?
   emailVerified DateTime?
-  
+
   orders        Order[]
   cart          Cart?     // Relación 1:1 con Cart
 
@@ -191,11 +195,10 @@ model OrderItem {
   id         Int      @id @default(autoincrement())
   orderId    Int
   order      Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  
-  // Corregido: tipo cambiado a String para coincidir con Product.id
+
   productId  String
   product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
-  
+
   price      Decimal  @db.Decimal(10, 2)
   quantity   Int      @default(1)
 
@@ -204,7 +207,7 @@ model OrderItem {
 
 model Cart {
   id        Int        @id @default(autoincrement())
-  userId    Int?       @unique // Campo necesario para la relación 1:1 con User
+  userId    Int?       @unique
   user      User?      @relation(fields: [userId], references: [id], onDelete: Cascade)
   createdAt DateTime   @default(now())
   items     CartItem[]
@@ -216,12 +219,29 @@ model CartItem {
   id         Int      @id @default(autoincrement())
   cartId     Int
   cart       Cart     @relation(fields: [cartId], references: [id], onDelete: Cascade)
-  
-  // Corregido: tipo cambiado a String para coincidir con Product.id
+
   productId  String
   product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
-  
+
   quantity   Int      @default(1)
 
   @@map("cart_items")
+}
+
+model TechnicalResource {
+  id          String   @id @default(cuid())
+  title       String
+  reference   String?
+  category    String
+  productLine String?
+  description String?
+  fileUrl     String?
+  icon        String   @default("description")
+  iconColor   String   @default("blue")
+  active      Boolean  @default(true)
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("technical_resources")
 }

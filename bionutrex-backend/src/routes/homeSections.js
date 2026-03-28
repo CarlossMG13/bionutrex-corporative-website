@@ -214,7 +214,7 @@ router.put(
             title: title || existingSection.title,
             subtitle:
               subtitle !== undefined ? subtitle : existingSection.subtitle,
-            content: content || existingSection.content,
+            content: content !== undefined ? content : existingSection.content,
             buttonText:
               buttonText !== undefined
                 ? buttonText
@@ -223,6 +223,14 @@ router.put(
               buttonLink !== undefined
                 ? buttonLink
                 : existingSection.buttonLink,
+            button2Text:
+              req.body.button2Text !== undefined
+                ? req.body.button2Text
+                : existingSection.button2Text,
+            button2Link:
+              req.body.button2Link !== undefined
+                ? req.body.button2Link
+                : existingSection.button2Link,
             order:
               order !== undefined ? parseInt(order) : existingSection.order,
             active:
@@ -303,11 +311,19 @@ router.put(
           title: title || existingSection.title,
           subtitle:
             subtitle !== undefined ? subtitle : existingSection.subtitle,
-          content: content || existingSection.content,
+          content: content !== undefined ? content : existingSection.content,
           buttonText:
             buttonText !== undefined ? buttonText : existingSection.buttonText,
           buttonLink:
             buttonLink !== undefined ? buttonLink : existingSection.buttonLink,
+          button2Text:
+            req.body.button2Text !== undefined
+              ? req.body.button2Text
+              : existingSection.button2Text,
+          button2Link:
+            req.body.button2Link !== undefined
+              ? req.body.button2Link
+              : existingSection.button2Link,
           order: order !== undefined ? parseInt(order) : existingSection.order,
           active:
             active !== undefined

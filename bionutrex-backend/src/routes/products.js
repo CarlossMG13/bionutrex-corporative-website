@@ -64,8 +64,24 @@ router.get("/", async (req, res) => {
   }
 });
 
+// GET /api/products/:id — público
+router.get("/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const product = await prisma.product.findUnique({
+      where: { id },
+      include: { category: true, variants: true },
+    });
+    if (!product) return res.status(404).json({ error: "Product not found" });
+    res.json(product);
+  } catch (error) {
+    console.error("Get product by id error:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 // POST /api/products — crear (admin)
-router.post("/", authMiddleware, upload.single("imageFile"), async (req, res) => {
+router.post("/", authMiddleware, upload.fields([{ name: "imageFile", maxCount: 1 }, { name: "image", maxCount: 1 }]), async (req, res) => {
   try {
     console.log("POST /products - Request body:", req.body);
     console.log("POST /products - File:", req.file);
@@ -83,6 +99,10 @@ router.post("/", authMiddleware, upload.single("imageFile"), async (req, res) =>
       active,
       imageUrl,
       variants,
+      images,
+      ingredients,
+      longDescription,
+      features,
     } = req.body;
 
     // Validaciones
@@ -99,9 +119,10 @@ router.post("/", authMiddleware, upload.single("imageFile"), async (req, res) =>
     console.log("Category found:", category.name);
 
     // Determinar la URL de imagen
+    const uploadedFile = req.files?.imageFile?.[0] ?? req.files?.image?.[0];
     let finalImageUrl = imageUrl || "";
-    if (req.file) {
-      finalImageUrl = `/uploads/${req.file.filename}`;
+    if (uploadedFile) {
+      finalImageUrl = `/uploads/${uploadedFile.filename}`;
     }
     if (!finalImageUrl) return res.status(400).json({ error: "Image is required" });
 
@@ -158,6 +179,10 @@ router.post("/", authMiddleware, upload.single("imageFile"), async (req, res) =>
         featuredOrder: featuredOrder ? parseInt(featuredOrder) : 0,
         active: active !== "false" && active !== false,
         categoryId,
+        images:          images          || null,
+        ingredients:     ingredients     || null,
+        longDescription: longDescription || null,
+        features:        features        || null,
         // Crear variantes
         variants: {
           create: parsedVariants.map(v => ({
@@ -185,7 +210,7 @@ router.post("/", authMiddleware, upload.single("imageFile"), async (req, res) =>
 });
 
 // PUT /api/products/:id — actualizar (admin)
-router.put("/:id", authMiddleware, upload.single("imageFile"), async (req, res) => {
+router.put("/:id", authMiddleware, upload.fields([{ name: "imageFile", maxCount: 1 }, { name: "image", maxCount: 1 }]), async (req, res) => {
   try {
     console.log("PUT /products/:id - Request body:", req.body);
     console.log("PUT /products/:id - File:", req.file);
@@ -204,15 +229,20 @@ router.put("/:id", authMiddleware, upload.single("imageFile"), async (req, res) 
       active,
       imageUrl,
       variants,
+      images,
+      ingredients,
+      longDescription,
+      features,
     } = req.body;
 
     const existing = await prisma.product.findUnique({ where: { id } });
     if (!existing) return res.status(404).json({ error: "Product not found" });
 
     // Determinar la URL de imagen
+    const uploadedFile = req.files?.imageFile?.[0] ?? req.files?.image?.[0];
     let finalImageUrl = existing.imageUrl;
-    if (req.file) {
-      finalImageUrl = `/uploads/${req.file.filename}`;
+    if (uploadedFile) {
+      finalImageUrl = `/uploads/${uploadedFile.filename}`;
     } else if (imageUrl) {
       finalImageUrl = imageUrl;
     }
@@ -241,7 +271,11 @@ router.put("/:id", authMiddleware, upload.single("imageFile"), async (req, res) 
       reviewCount: reviewCount !== undefined ? parseInt(reviewCount) : existing.reviewCount,
       featured: featured !== undefined ? (featured === "true" || featured === true) : existing.featured,
       featuredOrder: featuredOrder !== undefined ? parseInt(featuredOrder) : existing.featuredOrder,
-      active: active !== undefined ? (active !== "false" && active !== false) : existing.active,
+      active:          active          !== undefined ? (active !== "false" && active !== false) : existing.active,
+      images:          images          !== undefined ? images          || null : existing.images,
+      ingredients:     ingredients     !== undefined ? ingredients     || null : existing.ingredients,
+      longDescription: longDescription !== undefined ? longDescription || null : existing.longDescription,
+      features:        features        !== undefined ? features        || null : existing.features,
     };
 
     // Eliminar variantes antiguas y crear nuevas

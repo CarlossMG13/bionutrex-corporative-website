@@ -1,4 +1,8 @@
-import type { HomeSection } from "@/types";
+import type { HomeSection, TechnicalResource } from "@/types";
+
+const BACKEND_URL =
+  (import.meta.env.VITE_API_URL as string | undefined)?.replace("/api", "") ||
+  "http://localhost:3001";
 
 interface TDSRow {
   icon: string;
@@ -11,11 +15,24 @@ interface TDSRow {
   productLine?: string;
 }
 
-function parseRows(raw: string): TDSRow[] {
+function parseCmsRows(raw: string): TDSRow[] {
   try {
     const p = JSON.parse(raw);
     return Array.isArray(p) ? p : [];
   } catch { return []; }
+}
+
+function dbResourceToRow(r: TechnicalResource): TDSRow {
+  return {
+    icon: r.icon,
+    iconColor: r.iconColor,
+    name: r.title,
+    reference: r.reference ?? "",
+    category: r.category,
+    date: new Date(r.updatedAt).toLocaleDateString("es-MX", { year: "numeric", month: "short", day: "numeric" }),
+    downloadUrl: r.fileUrl ? `${BACKEND_URL}${r.fileUrl}` : "#",
+    productLine: r.productLine ?? undefined,
+  };
 }
 
 const COLOR_MAP: Record<string, string> = {
@@ -24,6 +41,7 @@ const COLOR_MAP: Record<string, string> = {
   blue: "#3b82f6",
   yellow: "#eab308",
   purple: "#a855f7",
+  orange: "#f97316",
 };
 
 interface Filters {
@@ -33,12 +51,16 @@ interface Filters {
 }
 
 interface Props {
-  section: HomeSection;
+  section?: HomeSection;
+  dbResources?: TechnicalResource[];
   filters?: Filters;
 }
 
-export default function ResourcesTable({ section, filters }: Props) {
-  let rows = parseRows(section.content);
+export default function ResourcesTable({ section, dbResources = [], filters }: Props) {
+  // Merge CMS rows + DB resources
+  const cmsRows = section?.content ? parseCmsRows(section.content) : [];
+  const dbRows = dbResources.map(dbResourceToRow);
+  let rows: TDSRow[] = [...dbRows, ...cmsRows];
 
   if (filters) {
     const { searchQuery, selectedCategory, selectedProductLine } = filters;
@@ -47,7 +69,8 @@ export default function ResourcesTable({ section, filters }: Props) {
       rows = rows.filter(
         (r) =>
           r.name.toLowerCase().includes(q) ||
-          r.reference.toLowerCase().includes(q),
+          r.reference.toLowerCase().includes(q) ||
+          r.category.toLowerCase().includes(q),
       );
     }
     if (selectedCategory) {
@@ -58,11 +81,15 @@ export default function ResourcesTable({ section, filters }: Props) {
     }
   }
 
+  const title = section?.title ?? "Fichas Técnicas";
+
+  if (rows.length === 0 && !section) return null;
+
   return (
     <section className="mb-20">
       <h3 className="text-2xl font-bold text-gray-900 mb-8 flex items-center gap-3 uppercase">
         <span className="w-8 h-0.5 bg-[#0d40a5] rounded-full shrink-0" />
-        {section.title}
+        {title}
       </h3>
 
       {rows.length === 0 ? (
@@ -113,7 +140,7 @@ export default function ResourcesTable({ section, filters }: Props) {
                       </div>
                     </td>
                     <td className="px-6 py-5 text-gray-400 text-sm font-mono">
-                      {row.reference}
+                      {row.reference || "—"}
                     </td>
                     <td className="px-6 py-5">
                       <span className="px-2 py-1 bg-gray-100 border border-gray-200 rounded text-[10px] text-gray-500 font-bold uppercase tracking-wider">
@@ -124,6 +151,8 @@ export default function ResourcesTable({ section, filters }: Props) {
                     <td className="px-6 py-5 text-right">
                       <a
                         href={row.downloadUrl || "#"}
+                        target="_blank"
+                        rel="noopener noreferrer"
                         className="inline-block px-4 py-2 rounded-lg font-bold text-xs uppercase tracking-wider transition-all"
                         style={{
                           backgroundColor: "rgba(13,64,165,0.08)",

@@ -113,7 +113,7 @@ export default function CategoriesStack({ section }: { section: HomeSection }) {
                 </h4>
                 <div className="flex items-center justify-between">
                   <span className="text-xl font-black text-white">
-                    ${product.price.toFixed(2)}
+                    {product.variants?.[0]?.price != null ? `$${product.variants[0].price.toFixed(2)}` : ""}
                   </span>
                   <button
                     className="w-10 h-10 text-white rounded-lg flex items-center justify-center hover:brightness-110 transition-all"

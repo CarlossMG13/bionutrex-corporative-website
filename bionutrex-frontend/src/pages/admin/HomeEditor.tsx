@@ -7,6 +7,9 @@ import {
   Image as ImageIcon,
   Layout,
   Package,
+  GripVertical,
+  Star,
+  Check,
 } from "lucide-react";
 import { useAdmin } from "@/contexts/AdminContext";
 import { useHomeDataRefresh } from "@/contexts/HomeDataContext";
@@ -15,7 +18,6 @@ import type { HomeSection, Slider, Product } from "@/types";
 import { SectionEditModal } from "@/components/Admin/SectionEditModal";
 import LivePreview from "@/components/Admin/LivePreview";
 import SliderEditModal from "@/components/Admin/SliderEditModal";
-import ProductEditModal from "@/components/Admin/ProductEditModal";
 
 export default function HomeEditor() {
   const {
@@ -51,9 +53,7 @@ export default function HomeEditor() {
   const [dataLoading, setDataLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [apiConnected, setApiConnected] = useState(false);
-  const [availableImages, setAvailableImages] = useState<
-    { src: string; name: string; type: "local" | "upload" }[]
-  >([]);
+
   const [sectionToDelete, setSectionToDelete] = useState<HomeSection | null>(
     null,
   );
@@ -61,8 +61,12 @@ export default function HomeEditor() {
   const [isSliderModalOpen, setIsSliderModalOpen] = useState(false);
   const [editingSlider, setEditingSlider] = useState<Slider | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
-  const [isProductModalOpen, setIsProductModalOpen] = useState(false);
-  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [featuredProducts, setFeaturedProducts] = useState<Product[]>([]);
+  const [availableProducts, setAvailableProducts] = useState<Product[]>([]);
+  const [featuredDragId, setFeaturedDragId] = useState<string | null>(null);
+  const [savingFeatured, setSavingFeatured] = useState(false);
+  const [featuredSaveMsg, setFeaturedSaveMsg] = useState<string | null>(null);
+  const [origFeaturedIds, setOrigFeaturedIds] = useState<Set<string>>(new Set());
 
   // Handlers para el Live Preview
   const handlePreviewClose = useCallback(() => {
@@ -76,50 +80,6 @@ export default function HomeEditor() {
     [setPreviewDevice],
   );
 
-  // Función para cargar imágenes disponibles
-  const loadAvailableImages = async () => {
-    const images: { src: string; name: string; type: "local" | "upload" }[] =
-      [];
-
-    // Cargar imágenes locales desde public/images (accesibles directamente)
-    const localImages = [
-      "heroSection-img.jpg",
-      "MethImage.jpg",
-      "img1-grid-product.jpg",
-      "img2-grid-product.jpg",
-      "img3-grid-product.jpg",
-    ];
-
-    // Usar rutas de public que funcionen en Vite
-    localImages.forEach((img) => {
-      images.push({
-        src: `/images/${img}`,
-        name: img,
-        type: "local",
-      });
-    });
-
-    // Intentar cargar imágenes del backend uploads
-    try {
-      const response = await fetch("http://localhost:3001/api/uploads/list");
-      if (response.ok) {
-        const uploadedFiles = await response.json();
-        uploadedFiles.forEach((file: string) => {
-          if (file.match(/\\.(jpg|jpeg|png|gif|webp)$/i)) {
-            images.push({
-              src: `http://localhost:3001/uploads/${file}`,
-              name: file,
-              type: "upload",
-            });
-          }
-        });
-      }
-    } catch (err) {
-      console.warn("No se pudieron cargar imágenes del servidor:", err);
-    }
-
-    setAvailableImages(images);
-  };
 
   // Cargar datos desde la API
   useEffect(() => {
@@ -319,18 +279,29 @@ export default function HomeEditor() {
             console.warn("Productos no disponibles");
           }
 
+          const applyProducts = (all: Product[]) => {
+            setProducts(all);
+            const feat = all
+              .filter((p) => p.featured)
+              .sort((a, b) => a.featuredOrder - b.featuredOrder);
+            const avail = all.filter((p) => !p.featured && p.active);
+            setFeaturedProducts(feat);
+            setAvailableProducts(avail);
+            setOrigFeaturedIds(new Set(feat.map((p) => p.id)));
+          };
+
           if (adminSections.length > 0) {
             setApiConnected(true);
             setSections(adminSections);
             setSliders(realSliders);
-            setProducts(realProducts);
+            applyProducts(realProducts);
             setError("Datos cargados correctamente.");
             setTimeout(() => setError(null), 3000);
           } else {
             // Secciones vacías — mostrar sliders reales si los hay
             setSections(mockSections);
             setSliders(realSliders.length > 0 ? realSliders : mockSliders);
-            setProducts(realProducts);
+            applyProducts(realProducts);
             setApiConnected(false);
             setError(
               realSliders.length > 0
@@ -395,7 +366,6 @@ export default function HomeEditor() {
     };
 
     loadData();
-    loadAvailableImages();
   }, []); // Sin dependencias para evitar loops
 
   // Aplicar cambios pendientes al contexto global en tiempo real
@@ -525,28 +495,28 @@ export default function HomeEditor() {
 
   const handleSectionSave = async (updatedSection: HomeSection) => {
     try {
-      // Agregar el cambio a la cola de cambios pendientes
+      // Persist to DB (includes images array)
+      await homeSectionAPI.updateWithJSON(updatedSection.id, {
+        ...updatedSection,
+        images: updatedSection.images ?? [],
+      });
+
+      // Update local state immediately for visual feedback
       addPendingChange({
         id: updatedSection.id,
         type: "section",
         action: "update",
         data: updatedSection,
       });
-
-      // Actualizar estado local inmediatamente para feedback visual
       setSections(
         sections.map((s) => (s.id === updatedSection.id ? updatedSection : s)),
       );
-
       setEditingSection(null);
       setIsModalOpen(false);
 
-      // Disparar actualización de la página Home
-      if (triggerRefresh) {
-        triggerRefresh();
-      }
+      if (triggerRefresh) triggerRefresh();
 
-      setError("✅ Cambios agregados a cola de publicación");
+      setError("✅ Sección guardada correctamente");
       setTimeout(() => setError(null), 3000);
     } catch (err) {
       console.error("Error saving section:", err);
@@ -678,36 +648,59 @@ export default function HomeEditor() {
     setTimeout(() => setError(null), 3000);
   };
 
-  const handleProductEdit = (product: Product) => {
-    setEditingProduct(product);
-    setIsProductModalOpen(true);
+
+  // ── Featured products helpers ──
+  const addToFeatured = (product: Product) => {
+    if (featuredProducts.length >= 6) return;
+    setFeaturedProducts((prev) => [...prev, product]);
+    setAvailableProducts((prev) => prev.filter((p) => p.id !== product.id));
   };
 
-  const handleProductDelete = async (id: string) => {
-    if (!window.confirm("¿Eliminar este producto?")) return;
+  const removeFromFeatured = (product: Product) => {
+    setFeaturedProducts((prev) => prev.filter((p) => p.id !== product.id));
+    if (product.active) setAvailableProducts((prev) => [...prev, product]);
+  };
+
+  const handleFeaturedDrop = (targetId: string) => {
+    if (!featuredDragId || featuredDragId === targetId) return;
+    setFeaturedProducts((prev) => {
+      const from = prev.find((p) => p.id === featuredDragId)!;
+      const rest = prev.filter((p) => p.id !== featuredDragId);
+      const toIdx = rest.findIndex((p) => p.id === targetId);
+      rest.splice(toIdx, 0, from);
+      return rest;
+    });
+    setFeaturedDragId(null);
+  };
+
+  const saveFeatured = async () => {
+    setSavingFeatured(true);
+    setFeaturedSaveMsg(null);
     try {
-      await productAPI.delete(id);
-      setProducts((prev) => prev.filter((p) => p.id !== id));
-      setError("✅ Producto eliminado");
-      setTimeout(() => setError(null), 3000);
-    } catch {
-      setError("❌ Error al eliminar el producto");
-      setTimeout(() => setError(null), 3000);
-    }
-  };
-
-  const handleProductSave = (savedProduct: Product) => {
-    if (editingProduct) {
-      setProducts((prev) =>
-        prev.map((p) => (p.id === savedProduct.id ? savedProduct : p)),
+      const updates = featuredProducts.map((p, index) => {
+        const fd = new FormData();
+        fd.append("featured", "true");
+        fd.append("featuredOrder", String(index));
+        return productAPI.update(p.id, fd);
+      });
+      const removedIds = [...origFeaturedIds].filter(
+        (id) => !featuredProducts.find((p) => p.id === id),
       );
-    } else {
-      setProducts((prev) => [...prev, savedProduct]);
+      const removals = removedIds.map((id) => {
+        const fd = new FormData();
+        fd.append("featured", "false");
+        fd.append("featuredOrder", "0");
+        return productAPI.update(id, fd);
+      });
+      await Promise.all([...updates, ...removals]);
+      setOrigFeaturedIds(new Set(featuredProducts.map((p) => p.id)));
+      setFeaturedSaveMsg("✅ Cambios guardados");
+    } catch {
+      setFeaturedSaveMsg("❌ Error al guardar");
+    } finally {
+      setSavingFeatured(false);
+      setTimeout(() => setFeaturedSaveMsg(null), 3000);
     }
-    setIsProductModalOpen(false);
-    setEditingProduct(null);
-    setError("✅ Producto guardado correctamente");
-    setTimeout(() => setError(null), 3000);
   };
 
   // Función para manejar la subida de archivos
@@ -741,8 +734,6 @@ export default function HomeEditor() {
         const result = await response.json();
         console.log("Upload successful:", result);
 
-        // Recargar las imágenes disponibles
-        await loadAvailableImages();
 
         setError(`✅ Imagen "${file.name}" subida correctamente`);
         setTimeout(() => setError(null), 3000);
@@ -1055,79 +1046,218 @@ export default function HomeEditor() {
         {/* Products Tab */}
         {activeTab === "products" && (
           <div className="space-y-6">
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {products.map((product) => {
-                const BACKEND_URL =
-                  (import.meta.env.VITE_API_URL as string | undefined)?.replace(
-                    "/api",
-                    "",
-                  ) || "http://localhost:3001";
-                const imgSrc = product.imageUrl?.startsWith("/uploads/")
-                  ? `${BACKEND_URL}${product.imageUrl}`
-                  : product.imageUrl;
-                return (
-                  <div
-                    key={product.id}
-                    className="border border-gray-200 rounded-lg p-4 flex gap-4 items-start"
-                  >
-                    <div
-                      className="w-16 h-20 rounded bg-gray-100 bg-center bg-cover flex-shrink-0"
-                      style={{ backgroundImage: `url('${imgSrc}')` }}
-                    />
-                    <div className="flex-1 min-w-0">
-                      <h4 className="font-semibold text-sm text-gray-900 truncate">
-                        {product.name}
-                      </h4>
-                      <p className="text-xs text-gray-500 mt-0.5">
-                        ${product.price.toFixed(2)}
-                      </p>
-                      <div className="flex gap-2 mt-1 flex-wrap">
-                        {product.featured && (
-                          <span className="text-[10px] bg-[#0d40a5] text-white px-2 py-0.5 rounded-full font-bold">
-                            Destacado #{product.featuredOrder + 1}
-                          </span>
-                        )}
-                        {product.badge && (
-                          <span className="text-[10px] bg-gray-200 text-gray-700 px-2 py-0.5 rounded-full">
-                            {product.badge}
-                          </span>
-                        )}
-                        {!product.active && (
-                          <span className="text-[10px] bg-red-100 text-red-600 px-2 py-0.5 rounded-full">
-                            Inactivo
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                    <div className="flex flex-col gap-1 flex-shrink-0">
-                      <button
-                        onClick={() => handleProductEdit(product)}
-                        className="text-xs text-[#0d40a5] hover:underline font-medium"
-                      >
-                        Editar
-                      </button>
-                      <button
-                        onClick={() => handleProductDelete(product.id)}
-                        className="text-xs text-red-500 hover:underline font-medium"
-                      >
-                        Eliminar
-                      </button>
-                    </div>
-                  </div>
-                );
-              })}
+            {/* Info banner */}
+            <div className="flex items-start gap-3 bg-blue-50 border border-blue-200 rounded-xl p-4">
+              <div className="flex-shrink-0 w-9 h-9 rounded-full bg-[#0d40a5] flex items-center justify-center mt-0.5">
+                <Package className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-[#0d40a5]">
+                  ¿Quieres agregar o editar productos?
+                </p>
+                <p className="text-sm text-gray-600 mt-0.5">
+                  Ve a{" "}
+                  <span className="font-semibold text-gray-800">
+                    Tienda → Catálogo de Productos
+                  </span>{" "}
+                  en el menú lateral para crear, editar o eliminar productos.
+                </p>
+              </div>
             </div>
 
-            <button
-              onClick={() => {
-                setEditingProduct(null);
-                setIsProductModalOpen(true);
-              }}
-              className="w-full border-2 border-dashed border-gray-300 rounded-lg p-6 text-gray-500 hover:border-[#0d40a5] hover:text-[#0d40a5] hover:bg-gray-50 transition-colors"
-            >
-              <Plus className="w-6 h-6 mx-auto mb-2" />
-              <span className="block text-sm font-medium">Nuevo Producto</span>
-            </button>
+            {/* ── Bestsellers picker ── */}
+            <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
+                    <Star className="w-4 h-4 text-yellow-500 fill-yellow-400" />
+                    Productos Bestsellers (Home)
+                  </h3>
+                  <p className="text-xs text-gray-500 mt-0.5">
+                    Arrastra para reordenar · Máx. 6 productos
+                  </p>
+                </div>
+                <button
+                  onClick={saveFeatured}
+                  disabled={savingFeatured}
+                  className="flex items-center gap-1.5 px-4 py-2 bg-[#0d40a5] text-white text-sm rounded-lg hover:bg-[#0d40a5]/90 disabled:opacity-50 transition-colors"
+                >
+                  {savingFeatured ? (
+                    "Guardando..."
+                  ) : (
+                    <>
+                      <Check className="w-4 h-4" />
+                      Guardar selección
+                    </>
+                  )}
+                </button>
+              </div>
+
+              {featuredSaveMsg && (
+                <p className={`text-sm font-medium ${featuredSaveMsg.startsWith("✅") ? "text-green-600" : "text-red-500"}`}>
+                  {featuredSaveMsg}
+                </p>
+              )}
+
+              {/* Selected (featured) list */}
+              <div className="border-2 border-dashed border-gray-200 rounded-lg min-h-[80px] p-2 space-y-1">
+                {featuredProducts.length === 0 ? (
+                  <div className="flex items-center justify-center h-16 text-sm text-gray-400">
+                    Añade productos desde la lista de abajo
+                  </div>
+                ) : (
+                  featuredProducts.map((product, index) => {
+                    const BACKEND_URL =
+                      (import.meta.env.VITE_API_URL as string | undefined)?.replace("/api", "") ||
+                      "http://localhost:3001";
+                    const imgSrc = product.imageUrl?.startsWith("/uploads/")
+                      ? `${BACKEND_URL}${product.imageUrl}`
+                      : product.imageUrl;
+                    const minPrice =
+                      product.variants && product.variants.length > 0
+                        ? Math.min(...product.variants.map((v) => v.price))
+                        : null;
+                    return (
+                      <div
+                        key={product.id}
+                        draggable
+                        onDragStart={() => setFeaturedDragId(product.id)}
+                        onDragOver={(e) => e.preventDefault()}
+                        onDrop={() => handleFeaturedDrop(product.id)}
+                        onDragEnd={() => setFeaturedDragId(null)}
+                        className={`flex items-center gap-3 px-3 py-2 bg-white border border-gray-100 rounded-lg cursor-grab active:cursor-grabbing select-none transition-opacity ${featuredDragId === product.id ? "opacity-40" : ""}`}
+                      >
+                        <GripVertical className="w-4 h-4 text-gray-300 flex-shrink-0" />
+                        <span className="text-xs font-bold text-[#0d40a5] w-5 text-center flex-shrink-0">
+                          {index + 1}
+                        </span>
+                        <div
+                          className="w-9 h-11 rounded bg-gray-100 bg-cover bg-center flex-shrink-0"
+                          style={{ backgroundImage: `url('${imgSrc}')` }}
+                        />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-gray-900 truncate">{product.name}</p>
+                          {minPrice !== null && (
+                            <p className="text-xs text-gray-400">${minPrice.toFixed(2)}</p>
+                          )}
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => removeFromFeatured(product)}
+                          className="text-xs text-red-500 hover:text-red-700 flex-shrink-0 px-1"
+                        >
+                          Quitar
+                        </button>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+
+              {/* Available products */}
+              {featuredProducts.length < 6 && availableProducts.length > 0 && (
+                <div>
+                  <p className="text-xs font-medium text-gray-500 mb-2">
+                    Catálogo disponible — clic en + para añadir
+                  </p>
+                  <div className="max-h-56 overflow-y-auto border border-gray-200 rounded-lg divide-y divide-gray-100">
+                    {availableProducts.map((product) => {
+                      const BACKEND_URL =
+                        (import.meta.env.VITE_API_URL as string | undefined)?.replace("/api", "") ||
+                        "http://localhost:3001";
+                      const imgSrc = product.imageUrl?.startsWith("/uploads/")
+                        ? `${BACKEND_URL}${product.imageUrl}`
+                        : product.imageUrl;
+                      const minPrice =
+                        product.variants && product.variants.length > 0
+                          ? Math.min(...product.variants.map((v) => v.price))
+                          : null;
+                      return (
+                        <div
+                          key={product.id}
+                          className="flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 transition-colors"
+                        >
+                          <div
+                            className="w-8 h-10 rounded bg-gray-100 bg-cover bg-center flex-shrink-0"
+                            style={{ backgroundImage: `url('${imgSrc}')` }}
+                          />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm text-gray-900 truncate">{product.name}</p>
+                            {minPrice !== null && (
+                              <p className="text-xs text-gray-400">${minPrice.toFixed(2)}</p>
+                            )}
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => addToFeatured(product)}
+                            className="w-7 h-7 flex items-center justify-center rounded-full bg-[#0d40a5] text-white hover:bg-[#0d40a5]/80 flex-shrink-0 transition-colors"
+                          >
+                            <Plus className="w-4 h-4" />
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Full catalog (read-only) */}
+            {products.length > 0 && (
+              <div>
+                <h3 className="text-sm font-semibold text-gray-700 mb-3">
+                  Catálogo completo ({products.length} productos)
+                </h3>
+                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                  {products.map((product) => {
+                    const BACKEND_URL =
+                      (import.meta.env.VITE_API_URL as string | undefined)?.replace("/api", "") ||
+                      "http://localhost:3001";
+                    const imgSrc = product.imageUrl?.startsWith("/uploads/")
+                      ? `${BACKEND_URL}${product.imageUrl}`
+                      : product.imageUrl;
+                    const minPrice =
+                      product.variants && product.variants.length > 0
+                        ? Math.min(...product.variants.map((v) => v.price))
+                        : null;
+                    return (
+                      <div
+                        key={product.id}
+                        className="border border-gray-200 rounded-lg p-3 flex gap-3 items-start"
+                      >
+                        <div
+                          className="w-12 h-14 rounded bg-gray-100 bg-center bg-cover flex-shrink-0"
+                          style={{ backgroundImage: `url('${imgSrc}')` }}
+                        />
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium text-sm text-gray-900 truncate">{product.name}</p>
+                          {minPrice !== null && (
+                            <p className="text-xs text-gray-500 mt-0.5">${minPrice.toFixed(2)}</p>
+                          )}
+                          <div className="flex gap-1.5 mt-1 flex-wrap">
+                            {product.featured && (
+                              <span className="text-[10px] bg-[#0d40a5] text-white px-2 py-0.5 rounded-full font-bold">
+                                Bestseller #{product.featuredOrder + 1}
+                              </span>
+                            )}
+                            {product.badge && (
+                              <span className="text-[10px] bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">
+                                {product.badge}
+                              </span>
+                            )}
+                            {!product.active && (
+                              <span className="text-[10px] bg-red-100 text-red-600 px-2 py-0.5 rounded-full">
+                                Inactivo
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </div>
         )}
 
@@ -1162,7 +1292,6 @@ export default function HomeEditor() {
             section={editingSection}
             onSave={handleSectionSave}
             onClose={handleModalClose}
-            availableImages={availableImages}
             onFileUpload={handleFileUpload}
           />
         )}
@@ -1179,17 +1308,6 @@ export default function HomeEditor() {
           />
         )}
 
-        {/* Product Edit Modal */}
-        {isProductModalOpen && (
-          <ProductEditModal
-            product={editingProduct}
-            onSave={handleProductSave}
-            onClose={() => {
-              setIsProductModalOpen(false);
-              setEditingProduct(null);
-            }}
-          />
-        )}
 
         {/* Delete Confirmation Modal */}
         {showDeleteModal && sectionToDelete && (

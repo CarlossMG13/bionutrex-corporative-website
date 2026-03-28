@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//c/Users/celso/Documentswebiste-bionutrex/bionutrex-frontend/src/pages/admin/components/**)",
+      "Bash(npx prisma:*)",
+      "Bash(npm install:*)"
+    ]
+  }
+}
