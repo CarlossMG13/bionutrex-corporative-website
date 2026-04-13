@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { supabase } from "@/lib/supabase";
 import {
   Eye,
   Plus,
@@ -199,11 +200,8 @@ export default function HomeEditor() {
         ];
 
         // Verificar autenticación primero
-        const token = localStorage.getItem("token");
-        if (!token) {
-          console.warn(
-            "No hay token de autenticación - usando datos de ejemplo",
-          );
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
           setSections(mockSections);
           setSliders(mockSliders);
           setApiConnected(false);

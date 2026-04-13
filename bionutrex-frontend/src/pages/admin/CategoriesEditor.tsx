@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { supabase } from "@/lib/supabase";
 import { Eye, Edit, Video, ImageIcon, Layout } from "lucide-react";
 import { useAdmin } from "@/contexts/AdminContext";
 import { useHomeDataRefresh } from "@/contexts/HomeDataContext";
@@ -101,8 +102,8 @@ export default function CategoriesEditor() {
     const load = async () => {
       try {
         setDataLoading(true);
-        const token = localStorage.getItem("token");
-        if (!token) {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
           setSections(MOCK_SECTIONS);
           setApiConnected(false);
           setDataLoading(false);

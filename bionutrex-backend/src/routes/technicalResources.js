@@ -1,49 +1,27 @@
 import express from "express";
 import multer from "multer";
-import path from "path";
-import fs from "fs";
-import { fileURLToPath } from "url";
 import prisma from "../utils/db.js";
 import { authMiddleware } from "../middleware/auth.js";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+import { uploadFile, deleteFile, BUCKETS } from "../lib/storage.js";
 
 const router = express.Router();
 
-// Multer config for PDF/doc uploads
-const uploadsDir = path.join(__dirname, "../../uploads");
-if (!fs.existsSync(uploadsDir)) {
-  fs.mkdirSync(uploadsDir, { recursive: true });
-}
-
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, uploadsDir),
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
-    cb(null, "resource-" + uniqueSuffix + path.extname(file.originalname));
-  },
-});
-
 const fileFilter = (req, file, cb) => {
   const allowed = [
-    "application/pdf",
-    "application/msword",
+    "application/pdf", "application/msword",
     "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-    "text/plain",
-    "application/zip",
-    "image/jpeg",
-    "image/png",
-    "image/webp",
+    "text/plain", "application/zip",
+    "image/jpeg", "image/png", "image/webp",
   ];
-  if (allowed.includes(file.mimetype)) {
-    cb(null, true);
-  } else {
-    cb(new Error("Tipo de archivo no permitido"), false);
-  }
+  if (allowed.includes(file.mimetype)) cb(null, true);
+  else cb(new Error("Tipo de archivo no permitido"), false);
 };
 
-const upload = multer({ storage, fileFilter, limits: { fileSize: 50 * 1024 * 1024 } });
+const upload = multer({
+  storage: multer.memoryStorage(),
+  fileFilter,
+  limits: { fileSize: 50 * 1024 * 1024 },
+});
 
 // GET /api/technical-resources — public
 router.get("/", async (req, res) => {
@@ -62,9 +40,7 @@ router.get("/", async (req, res) => {
 // GET /api/technical-resources/admin/all — admin
 router.get("/admin/all", authMiddleware, async (req, res) => {
   try {
-    const resources = await prisma.technicalResource.findMany({
-      orderBy: { order: "asc" },
-    });
+    const resources = await prisma.technicalResource.findMany({ orderBy: { order: "asc" } });
     res.json(resources);
   } catch (error) {
     console.error("Get all technical resources error:", error);
@@ -75,14 +51,16 @@ router.get("/admin/all", authMiddleware, async (req, res) => {
 // POST /api/technical-resources — create (admin)
 router.post("/", authMiddleware, upload.single("file"), async (req, res) => {
   try {
-    const { title, reference, category, productLine, description, icon, iconColor, active, order } =
-      req.body;
+    const { title, reference, category, productLine, description, icon, iconColor, active, order } = req.body;
+    if (!title || !category) return res.status(400).json({ error: "title and category are required" });
 
-    if (!title || !category) {
-      return res.status(400).json({ error: "title and category are required" });
+    let fileUrl = null;
+    if (req.file) {
+      fileUrl = await uploadFile(
+        req.file.buffer, BUCKETS.CMS, "resources",
+        req.file.originalname, req.file.mimetype,
+      );
     }
-
-    const fileUrl = req.file ? `/uploads/${req.file.filename}` : null;
 
     const resource = await prisma.technicalResource.create({
       data: {
@@ -113,10 +91,16 @@ router.put("/:id", authMiddleware, upload.single("file"), async (req, res) => {
     const existing = await prisma.technicalResource.findUnique({ where: { id } });
     if (!existing) return res.status(404).json({ error: "Resource not found" });
 
-    const { title, reference, category, productLine, description, icon, iconColor, active, order } =
-      req.body;
+    const { title, reference, category, productLine, description, icon, iconColor, active, order } = req.body;
 
-    const fileUrl = req.file ? `/uploads/${req.file.filename}` : existing.fileUrl;
+    let fileUrl = existing.fileUrl;
+    if (req.file) {
+      if (existing.fileUrl) await deleteFile(existing.fileUrl);
+      fileUrl = await uploadFile(
+        req.file.buffer, BUCKETS.CMS, "resources",
+        req.file.originalname, req.file.mimetype,
+      );
+    }
 
     const resource = await prisma.technicalResource.update({
       where: { id },
@@ -129,10 +113,7 @@ router.put("/:id", authMiddleware, upload.single("file"), async (req, res) => {
         fileUrl,
         icon: icon || existing.icon,
         iconColor: iconColor || existing.iconColor,
-        active:
-          active !== undefined
-            ? active === "true" || active === true
-            : existing.active,
+        active: active !== undefined ? active === "true" || active === true : existing.active,
         order: order !== undefined ? parseInt(order) : existing.order,
       },
     });
@@ -151,6 +132,7 @@ router.delete("/:id", authMiddleware, async (req, res) => {
     const existing = await prisma.technicalResource.findUnique({ where: { id } });
     if (!existing) return res.status(404).json({ error: "Resource not found" });
 
+    if (existing.fileUrl) await deleteFile(existing.fileUrl);
     await prisma.technicalResource.delete({ where: { id } });
     res.json({ message: "Resource deleted successfully" });
   } catch (error) {

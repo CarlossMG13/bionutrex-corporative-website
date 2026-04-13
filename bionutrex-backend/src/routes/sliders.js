@@ -2,6 +2,7 @@ import express from "express";
 import prisma from "../utils/db.js";
 import { authMiddleware } from "../middleware/auth.js";
 import { upload } from "../middleware/upload.js";
+import { uploadFile, deleteFile, BUCKETS } from "../lib/storage.js";
 
 const router = express.Router();
 
@@ -12,7 +13,6 @@ router.get("/", async (req, res) => {
       where: { active: true },
       orderBy: { order: "asc" },
     });
-
     res.json(sliders);
   } catch (error) {
     console.error("Get sliders error:", error);
@@ -23,10 +23,7 @@ router.get("/", async (req, res) => {
 // GET /api/sliders/admin/all - Obtener todos los sliders (admin)
 router.get("/admin/all", authMiddleware, async (req, res) => {
   try {
-    const sliders = await prisma.slider.findMany({
-      orderBy: { order: "asc" },
-    });
-
+    const sliders = await prisma.slider.findMany({ orderBy: { order: "asc" } });
     res.json(sliders);
   } catch (error) {
     console.error("Get all sliders error:", error);
@@ -38,15 +35,8 @@ router.get("/admin/all", authMiddleware, async (req, res) => {
 router.get("/:id", async (req, res) => {
   try {
     const { id } = req.params;
-
-    const slider = await prisma.slider.findUnique({
-      where: { id },
-    });
-
-    if (!slider) {
-      return res.status(404).json({ error: "Slider not found" });
-    }
-
+    const slider = await prisma.slider.findUnique({ where: { id } });
+    if (!slider) return res.status(404).json({ error: "Slider not found" });
     res.json(slider);
   } catch (error) {
     console.error("Get slider error:", error);
@@ -58,28 +48,19 @@ router.get("/:id", async (req, res) => {
 router.post("/", authMiddleware, upload.single("image"), async (req, res) => {
   try {
     const {
-      title,
-      titleSegments,
-      subtitle,
-      description,
-      label,
-      mediaType,
-      videoUrl,
-      videoMuted,
-      accentColor,
-      buttonText,
-      buttonLink,
-      button2Text,
-      button2Link,
-      stats,
-      order,
-      active,
+      title, titleSegments, subtitle, description, label,
+      mediaType, videoUrl, videoMuted, accentColor,
+      buttonText, buttonLink, button2Text, button2Link,
+      stats, order, active,
     } = req.body;
 
     if (!title) return res.status(400).json({ error: "Title is required" });
+    if (!req.file) return res.status(400).json({ error: "Image is required" });
 
-    const imageUrl = req.file ? `/uploads/${req.file.filename}` : "";
-    if (!imageUrl) return res.status(400).json({ error: "Image is required" });
+    const imageUrl = await uploadFile(
+      req.file.buffer, BUCKETS.CMS, "sliders",
+      req.file.originalname, req.file.mimetype,
+    );
 
     const slider = await prisma.slider.create({
       data: {
@@ -115,22 +96,10 @@ router.put("/:id", authMiddleware, upload.single("image"), async (req, res) => {
   try {
     const { id } = req.params;
     const {
-      title,
-      titleSegments,
-      subtitle,
-      description,
-      label,
-      mediaType,
-      videoUrl,
-      videoMuted,
-      accentColor,
-      buttonText,
-      buttonLink,
-      button2Text,
-      button2Link,
-      stats,
-      order,
-      active,
+      title, titleSegments, subtitle, description, label,
+      mediaType, videoUrl, videoMuted, accentColor,
+      buttonText, buttonLink, button2Text, button2Link,
+      stats, order, active,
     } = req.body;
 
     const existing = await prisma.slider.findUnique({ where: { id } });
@@ -138,41 +107,33 @@ router.put("/:id", authMiddleware, upload.single("image"), async (req, res) => {
 
     const updateData = {
       title: title || existing.title,
-      titleSegments:
-        titleSegments !== undefined ? titleSegments : existing.titleSegments,
+      titleSegments: titleSegments !== undefined ? titleSegments : existing.titleSegments,
       subtitle: subtitle !== undefined ? subtitle : existing.subtitle,
-      description:
-        description !== undefined ? description : existing.description,
+      description: description !== undefined ? description : existing.description,
       label: label !== undefined ? label : existing.label,
       mediaType: mediaType || existing.mediaType,
       videoUrl: videoUrl !== undefined ? videoUrl : existing.videoUrl,
-      videoMuted:
-        videoMuted !== undefined
-          ? videoMuted === "false"
-            ? false
-            : true
-          : existing.videoMuted,
+      videoMuted: videoMuted !== undefined ? videoMuted === "false" ? false : true : existing.videoMuted,
       accentColor: accentColor || existing.accentColor,
       buttonText: buttonText !== undefined ? buttonText : existing.buttonText,
       buttonLink: buttonLink !== undefined ? buttonLink : existing.buttonLink,
-      button2Text:
-        button2Text !== undefined ? button2Text : existing.button2Text,
-      button2Link:
-        button2Link !== undefined ? button2Link : existing.button2Link,
+      button2Text: button2Text !== undefined ? button2Text : existing.button2Text,
+      button2Link: button2Link !== undefined ? button2Link : existing.button2Link,
       stats: stats !== undefined ? stats : existing.stats,
       order: order !== undefined ? parseInt(order) : existing.order,
-      active:
-        active !== undefined
-          ? active === "true" || active === true
-          : existing.active,
+      active: active !== undefined ? active === "true" || active === true : existing.active,
     };
 
-    if (req.file) updateData.imageUrl = `/uploads/${req.file.filename}`;
+    if (req.file) {
+      // Eliminar imagen anterior de Supabase
+      if (existing.imageUrl) await deleteFile(existing.imageUrl);
+      updateData.imageUrl = await uploadFile(
+        req.file.buffer, BUCKETS.CMS, "sliders",
+        req.file.originalname, req.file.mimetype,
+      );
+    }
 
-    const slider = await prisma.slider.update({
-      where: { id },
-      data: updateData,
-    });
+    const slider = await prisma.slider.update({ where: { id }, data: updateData });
     res.json(slider);
   } catch (error) {
     console.error("Update slider error:", error);
@@ -184,22 +145,17 @@ router.put("/:id", authMiddleware, upload.single("image"), async (req, res) => {
 router.delete("/:id", authMiddleware, async (req, res) => {
   try {
     const { id } = req.params;
-
     const existing = await prisma.slider.findUnique({ where: { id } });
     if (!existing) return res.status(404).json({ error: "Slider not found" });
 
-    // Restricción: mínimo 2 slides activos
     if (existing.active) {
-      const activeCount = await prisma.slider.count({
-        where: { active: true },
-      });
+      const activeCount = await prisma.slider.count({ where: { active: true } });
       if (activeCount <= 2) {
-        return res.status(400).json({
-          error: "El Hero Section debe tener al menos 2 slides activos.",
-        });
+        return res.status(400).json({ error: "El Hero Section debe tener al menos 2 slides activos." });
       }
     }
 
+    if (existing.imageUrl) await deleteFile(existing.imageUrl);
     await prisma.slider.delete({ where: { id } });
     res.json({ message: "Slider deleted successfully" });
   } catch (error) {

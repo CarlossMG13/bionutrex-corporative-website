@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { supabase } from "@/lib/supabase";
 import {
   Eye,
   Edit,
@@ -128,8 +129,8 @@ export default function ResourcesEditor() {
     const load = async () => {
       try {
         setDataLoading(true);
-        const token = localStorage.getItem("token");
-        if (!token) {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
           setSections(MOCK_SECTIONS);
           setApiConnected(false);
           setDataLoading(false);

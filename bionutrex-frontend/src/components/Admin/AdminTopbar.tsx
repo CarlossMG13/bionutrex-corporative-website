@@ -13,6 +13,7 @@ import { useAdmin } from "@/contexts/AdminContext";
 import { useAuth } from "@/hooks/useAuth";
 import { useHomeDataRefresh } from "@/contexts/HomeDataContext";
 import { homeSectionAPI, sliderAPI } from "@/services/api";
+import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import type { PendingChange } from "@/contexts/AdminContext";
 
@@ -132,8 +133,8 @@ export default function AdminTopbar() {
 
   // Función para publicar un cambio individual
   const publishSingleChange = async (change: PendingChange): Promise<void> => {
-    const token = localStorage.getItem("token");
-    if (!token) {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
       throw new Error("No authentication token available");
     }
 

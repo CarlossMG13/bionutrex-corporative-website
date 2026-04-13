@@ -2,6 +2,7 @@ import express from "express";
 import prisma from "../utils/db.js";
 import { authMiddleware } from "../middleware/auth.js";
 import { upload } from "../middleware/upload.js";
+import { uploadFile, BUCKETS } from "../lib/storage.js";
 
 const router = express.Router();
 
@@ -146,7 +147,13 @@ router.post("/", authMiddleware, upload.single("image"), async (req, res) => {
         .json({ error: "Section with this key already exists" });
     }
 
-    const imageUrl = req.file ? `/uploads/${req.file.filename}` : null;
+    let imageUrl = null;
+    if (req.file) {
+      imageUrl = await uploadFile(
+        req.file.buffer, BUCKETS.CMS, "sections",
+        req.file.originalname, req.file.mimetype,
+      );
+    }
 
     const section = await prisma.homeSection.create({
       data: {
