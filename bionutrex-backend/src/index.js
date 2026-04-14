@@ -23,6 +23,7 @@ import technicalResourceRoutes from "./routes/technicalResources.js";
 import cartRoutes from "./routes/cart.js";
 import checkoutRoutes from "./routes/checkout.js";
 import adminOrdersRoutes from "./routes/admin-orders.js";
+import userRoutes from "./routes/users.js";
 console.log("✅ Routes imported successfully");
 
 console.log("📂 Path setup complete");
@@ -92,6 +93,7 @@ app.use("/api/technical-resources", technicalResourceRoutes);
 app.use("/api/cart", cartRoutes);
 app.use("/api/checkout", checkoutRoutes);
 app.use("/api/admin/orders", adminOrdersRoutes);
+app.use("/api/users", userRoutes);
 console.log("✅ All routes registered");
 
 // Health check

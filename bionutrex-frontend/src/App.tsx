@@ -9,7 +9,9 @@ import { useLenis } from "./hooks/useLenis";
 import { AdminProvider } from "@/contexts/AdminContext";
 import { HomeDataProvider } from "@/contexts/HomeDataContext";
 import { CartProvider } from "@/contexts/CartContext";
+import { AuthUserProvider } from "@/contexts/AuthUserContext";
 import { CartDrawer } from "@/components/cart/CartDrawer";
+import { AuthDrawer } from "@/components/auth/AuthDrawer";
 
 // Pages
 import Home from "@/pages/Home";
@@ -21,6 +23,8 @@ import Catalog from "./pages/Catalog";
 import ProductDetail from "./pages/ProductDetail";
 import Checkout from "./pages/Checkout";
 import CheckoutSuccess from "./pages/CheckoutSuccess";
+import VerifyEmail from "./pages/auth/VerifyEmail";
+import UserProfile from "./pages/UserProfile";
 
 // Admin pages
 import Dashboard from "@/pages/admin/Dashboard";
@@ -36,8 +40,6 @@ import CategoriesEditor from "./pages/admin/CategoriesEditor";
 import Resources from "./pages/Resources";
 import ResourcesEditor from "./pages/admin/ResourcesEditor";
 import OrdersManager from "./pages/admin/OrdersManager";
-
-/* import About from "@/pages/About"; */
 
 // Components
 import { Navbar } from "@/components/shared/Navbar";
@@ -55,16 +57,12 @@ function AppContent() {
   return (
     <div className="min-h-screen bg-[#EEEEEE] flex flex-col">
       {!isAdminRoute && <Navbar />}
-      {!isAdminRoute && (
-        <div className="pt-16 lg:pt-20">
-          <CartDrawer />
-        </div>
-      )}
+
       <main
         className={
           isAdminRoute
             ? "w-full"
-            : "home-page w-full overflow-x-hidden min-h-screen"
+            : "home-page w-full overflow-x-hidden min-h-screen pt-16 lg:pt-20"
         }
       >
         <Routes>
@@ -78,6 +76,8 @@ function AppContent() {
           <Route path="/catalogo/:id" element={<ProductDetail />} />
           <Route path="/checkout" element={<Checkout />} />
           <Route path="/checkout/success" element={<CheckoutSuccess />} />
+          <Route path="/auth/verify" element={<VerifyEmail />} />
+          <Route path="/perfil" element={<UserProfile />} />
 
           {/* Ruta de Login (sin layout de admin) */}
           <Route path="/admin/login" element={<Login />} />
@@ -107,7 +107,13 @@ function AppContent() {
           </Route>
         </Routes>
       </main>
+
       {!isAdminRoute && <Footer />}
+
+      {/* ── Fixed overlay drawers — rendered outside normal flow ── */}
+      {!isAdminRoute && <AuthDrawer />}
+      {!isAdminRoute && <CartDrawer />}
+
       <Toaster position="top-right" />
     </div>
   );
@@ -118,9 +124,11 @@ function App() {
     <Router>
       <HomeDataProvider>
         <AdminProvider>
-          <CartProvider>
-            <AppContent />
-          </CartProvider>
+          <AuthUserProvider>
+            <CartProvider>
+              <AppContent />
+            </CartProvider>
+          </AuthUserProvider>
         </AdminProvider>
       </HomeDataProvider>
     </Router>

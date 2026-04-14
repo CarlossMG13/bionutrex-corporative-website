@@ -1,6 +1,7 @@
 import express from "express";
 import Stripe from "stripe";
 import { PrismaClient } from "@prisma/client";
+import { sendOrderConfirmationEmail } from "../services/email.js";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 const prisma = new PrismaClient();
@@ -117,6 +118,9 @@ router.post("/confirm", async (req, res) => {
         items: { include: { product: true } },
       },
     });
+
+    // Enviar email de confirmación (fire-and-forget, no bloquea la respuesta)
+    sendOrderConfirmationEmail(order);
 
     res.json({ success: true, order });
   } catch (error) {

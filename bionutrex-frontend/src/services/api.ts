@@ -6,6 +6,7 @@ import type {
   AuthResponse,
   Product,
   TechnicalResource,
+  CustomerUser,
 } from "@/types";
 import { supabase } from "@/lib/supabase";
 
@@ -150,6 +151,30 @@ export const cartAPI = {
   removeItem: (productId: string) => api.post(`/cart/remove/${productId}`),
   deleteItem: (productId: string) => api.delete(`/cart/item/${productId}`),
   clearCart: () => api.delete("/cart"),
+};
+
+// ─── Customer Auth API ───────────────────────────────────────────────────────
+
+/**
+ * Llama al backend con el token de Supabase ya en el interceptor.
+ * El backend hace upsert del User y marca el email como verificado.
+ */
+export const userAPI = {
+  /** Obtiene el perfil del cliente autenticado */
+  getMe: () => api.get<CustomerUser>("/users/me"),
+
+  /**
+   * Sincroniza el User en la BD (llámalo después del primer SIGNED_IN post-verificación).
+   * Envía el email de bienvenida la primera vez.
+   */
+  sync: () => api.post<{ user: CustomerUser; isNew: boolean }>("/users/sync"),
+
+  /** Actualiza nombre, teléfono o imagen del perfil */
+  updateMe: (data: { name?: string; phone?: string; image?: string }) =>
+    api.put<CustomerUser>("/users/me", data),
+
+  /** Pedidos del cliente */
+  getMyOrders: () => api.get("/users/me/orders"),
 };
 
 export default api;

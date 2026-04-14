@@ -125,6 +125,44 @@ export interface TechnicalResource {
   updatedAt: string;
 }
 
+export interface CustomerUser {
+  id: number;
+  email: string;
+  name?: string | null;
+  phone?: string | null;
+  image?: string | null;
+  emailVerified?: string | null;
+  createdAt: string;
+  _count?: { orders: number };
+}
+
+export interface OrderItem {
+  id: number;
+  productId: string;
+  quantity: number;
+  price: number;
+  product?: {
+    id: string;
+    name: string;
+    imageUrl: string;
+  };
+}
+
+export interface Order {
+  id: number;
+  paymentIntentId?: string;
+  status: string;
+  paid: boolean;
+  total: number;
+  fullName: string;
+  email: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  createdAt: string;
+  items: OrderItem[];
+}
+
 export interface Product {
   id: string;
   name: string;

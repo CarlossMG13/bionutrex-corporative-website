@@ -30,6 +30,7 @@
     "express-session": "^1.19.0",
     "jsonwebtoken": "^9.0.3",
     "multer": "^2.0.2",
+    "resend": "^6.11.0",
     "stripe": "^21.0.1",
     "uuid": "^13.0.0"
   },

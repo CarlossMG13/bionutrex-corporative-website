@@ -1,10 +1,101 @@
 import * as React from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useState, useEffect, useRef } from "react";
-import { Menu, X, Zap, Search, User, ShoppingCart } from "lucide-react";
+import { Menu, X, Zap, Search, User, ShoppingCart, LogOut, Package } from "lucide-react";
 import { NavMegaMenu } from "./NavMegaMenu";
 import { useCart } from "@/contexts/CartContext";
+import { useAuthUser } from "@/contexts/AuthUserContext";
 
+// ─── UserButton ───────────────────────────────────────────────────────────────
+function UserButton({ className = "" }: { className?: string }) {
+  const { user, loading, openAuth, logout, isAuthOpen } = useAuthUser();
+  const navigate = useNavigate();
+  const [dropOpen, setDropOpen] = useState(false);
+  const dropRef = useRef<HTMLDivElement>(null);
+
+  // Cerrar dropdown al hacer clic fuera
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (dropRef.current && !dropRef.current.contains(e.target as Node)) {
+        setDropOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  if (loading) {
+    return (
+      <div className={`w-8 h-8 rounded-full bg-white/10 animate-pulse ${className}`} />
+    );
+  }
+
+  // Sin sesión → abre el AuthDrawer
+  if (!user) {
+    return (
+      <button
+        onClick={openAuth}
+        aria-label="Iniciar sesión"
+        className={`text-slate-600 hover:text-[#00e5ff] transition-colors cursor-pointer ${
+          isAuthOpen ? "text-[#00e5ff]" : ""
+        } ${className}`}
+      >
+        <User className="w-5 h-5" />
+      </button>
+    );
+  }
+
+  // Con sesión → iniciales + dropdown
+  const initials = (user.name ?? user.email)
+    .split(" ")
+    .map((w) => w[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
+
+  return (
+    <div className={`relative ${className}`} ref={dropRef}>
+      <button
+        onClick={() => setDropOpen((v) => !v)}
+        className="w-8 h-8 rounded-full bg-[#0d40a5] flex items-center justify-center
+                   text-white font-black text-xs hover:bg-[#0d40a5]/80 transition-colors cursor-pointer"
+        aria-label="Menú de cuenta"
+      >
+        {initials}
+      </button>
+
+      {dropOpen && (
+        <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-xl shadow-xl
+                        border border-gray-100 overflow-hidden z-[60]">
+          <div className="px-4 py-3 border-b border-gray-100">
+            <p className="text-xs font-black text-gray-900 truncate">
+              {user.name ?? "Mi cuenta"}
+            </p>
+            <p className="text-[10px] text-gray-400 truncate">{user.email}</p>
+          </div>
+          <button
+            onClick={() => { setDropOpen(false); navigate("/perfil"); }}
+            className="w-full flex items-center gap-3 px-4 py-3 text-xs font-bold text-gray-600
+                       hover:bg-gray-50 hover:text-[#0d40a5] transition-colors cursor-pointer"
+          >
+            <Package className="w-4 h-4" />
+            Mis pedidos
+          </button>
+          <button
+            onClick={() => { logout(); setDropOpen(false); }}
+            className="w-full flex items-center gap-3 px-4 py-3 text-xs font-bold text-gray-600
+                       hover:bg-red-50 hover:text-red-500 transition-colors border-t border-gray-100 cursor-pointer"
+          >
+            <LogOut className="w-4 h-4" />
+            Cerrar sesión
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Navbar ───────────────────────────────────────────────────────────────────
 export function Navbar({
   isPreview = false,
   previewDevice,
@@ -13,6 +104,8 @@ export function Navbar({
   previewDevice?: "mobile" | "tablet" | "desktop";
 }) {
   const { toggleCart, cartCount } = useCart();
+  const { user, openAuth } = useAuthUser();
+  const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
   const [isVisible, setIsVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
@@ -58,6 +151,15 @@ export function Navbar({
     return () => window.removeEventListener("resize", handleResize);
   }, [isOpen]);
 
+  const handleCuentaClick = () => {
+    setIsOpen(false);
+    if (user) {
+      navigate("/perfil");
+    } else {
+      openAuth();
+    }
+  };
+
   return (
     <>
       <header
@@ -73,7 +175,7 @@ export function Navbar({
             {/* Col izq: Hamburger */}
             <button
               onClick={() => setIsOpen(!isOpen)}
-              className="text-slate-600 hover:text-[#0d40a5] transition-colors justify-self-start"
+              className="text-slate-600 hover:text-[#0d40a5] transition-colors justify-self-start cursor-pointer"
             >
               <Menu className="w-6 h-6" />
             </button>
@@ -88,10 +190,10 @@ export function Navbar({
 
             {/* Col der: Search + Cart */}
             <div className="flex items-center justify-end gap-4">
-              <button className="text-slate-600 hover:text-[#00e5ff] transition-colors">
+              <button className="text-slate-600 hover:text-[#00e5ff] transition-colors cursor-pointer">
                 <Search className="w-5 h-5" />
               </button>
-              <button onClick={toggleCart} className="relative text-slate-600 hover:text-[#00e5ff] transition-colors">
+              <button onClick={toggleCart} className="relative text-slate-600 hover:text-[#00e5ff] transition-colors cursor-pointer">
                 <ShoppingCart className="w-5 h-5" />
                 {cartCount > 0 && (
                   <span className="absolute -top-1 -right-1 bg-[#0d40a5] text-white text-[9px] font-black px-1.5 rounded-full leading-4">
@@ -160,9 +262,7 @@ export function Navbar({
               <button className="text-slate-600 hover:text-[#00e5ff] transition-colors cursor-pointer">
                 <Search className="w-5 h-5" />
               </button>
-              <button className="text-slate-600 hover:text-[#00e5ff] transition-colors cursor-pointer">
-                <User className="w-5 h-5" />
-              </button>
+              <UserButton />
               <button onClick={toggleCart} className="relative text-slate-600 hover:text-[#00e5ff] transition-colors cursor-pointer">
                 <ShoppingCart className="w-5 h-5" />
                 {cartCount > 0 && (
@@ -204,7 +304,7 @@ export function Navbar({
           </div>
           <button
             onClick={() => setIsOpen(false)}
-            className="text-white hover:text-[#00e5ff] transition-colors"
+            className="text-white hover:text-[#00e5ff] transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
@@ -212,10 +312,10 @@ export function Navbar({
 
         <nav className="flex flex-col p-6 space-y-6">
           {[
-            { label: "Nosotros", to: "/About" },
-            { label: "Productos", to: "/Products" },
-            { label: "Protein Hub", to: "/" },
-            { label: "Performance", to: "/" },
+            { label: "Nosotros", to: "/about" },
+            { label: "Productos", to: "/products" },
+            { label: "Categorías", to: "/categories" },
+            { label: "Recursos", to: "/resources" },
             { label: "Blog", to: "/blog" },
           ].map((item) => (
             <Link
@@ -228,14 +328,21 @@ export function Navbar({
             </Link>
           ))}
 
+          {/* Cuenta — navega a /perfil si hay sesión, abre auth si no */}
+          <button
+            onClick={handleCuentaClick}
+            className="text-white font-extrabold text-xl tracking-widest uppercase hover:text-[#00e5ff] transition-colors text-left cursor-pointer"
+          >
+            Cuenta
+          </button>
+
           <div className="pt-6 border-t border-white/20 flex items-center gap-6">
-            <button className="text-white hover:text-[#00e5ff] transition-colors flex items-center gap-2 text-xs font-extrabold tracking-widest uppercase">
-              <User className="w-5 h-5" />
-              Account
-            </button>
-            <button onClick={toggleCart} className="text-white hover:text-[#00e5ff] transition-colors flex items-center gap-2 text-xs font-extrabold tracking-widest uppercase">
+            <button
+              onClick={toggleCart}
+              className="text-white hover:text-[#00e5ff] transition-colors flex items-center gap-2 text-xs font-extrabold tracking-widest uppercase cursor-pointer"
+            >
               <ShoppingCart className="w-5 h-5" />
-              Cart
+              Carrito
               {cartCount > 0 && (
                 <span className="bg-[#00e5ff] text-[#0d40a5] text-[9px] font-black px-1.5 rounded-full leading-4">
                   {cartCount}
