@@ -1,6 +1,7 @@
 import * as React from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useState, useEffect, useRef } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import { Menu, X, Zap, Search, User, ShoppingCart, LogOut, Package } from "lucide-react";
 import { NavMegaMenu } from "./NavMegaMenu";
 import { useCart } from "@/contexts/CartContext";
@@ -281,77 +282,106 @@ export function Navbar({
         />
       </header>
 
-      {/* Overlay mobile */}
-      <div
-        className={`${isPreview ? "absolute" : "fixed"} inset-0 bg-black/50 z-40 lg:hidden transition-opacity duration-300 ${
-          isOpen ? "opacity-100" : "opacity-0 pointer-events-none"
-        }`}
-        onClick={() => setIsOpen(false)}
-      />
-
-      {/* Sidebar mobile */}
-      <div
-        className={`${isPreview ? "absolute" : "fixed"} top-0 left-0 h-full w-72 bg-[#0d40a5] shadow-2xl z-50 transform transition-transform duration-300 ease-in-out lg:hidden ${
-          isOpen ? "translate-x-0" : "-translate-x-full"
-        }`}
-      >
-        <div className="flex items-center justify-between p-6 border-b border-white/20">
-          <div className="flex items-center gap-2">
-            <Zap className="w-6 h-6 text-[#00e5ff] fill-[#00e5ff]" />
-            <span className="text-xl font-black tracking-tighter uppercase italic text-white">
-              Bionutrex
-            </span>
-          </div>
-          <button
-            onClick={() => setIsOpen(false)}
-            className="text-white hover:text-[#00e5ff] transition-colors cursor-pointer"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-
-        <nav className="flex flex-col p-6 space-y-6">
-          {[
-            { label: "Nosotros", to: "/about" },
-            { label: "Productos", to: "/products" },
-            { label: "Categorías", to: "/categories" },
-            { label: "Recursos", to: "/resources" },
-            { label: "Blog", to: "/blog" },
-          ].map((item) => (
-            <Link
-              key={item.label}
-              to={item.to}
-              className="text-white font-extrabold text-xl tracking-widest uppercase hover:text-[#00e5ff] transition-colors"
+      {/* Mobile menu — AnimatePresence para slide + fade */}
+      <AnimatePresence>
+        {isOpen && (
+          <>
+            {/* Overlay */}
+            <motion.div
+              key="mobile-overlay"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.25 }}
+              className={`${isPreview ? "absolute" : "fixed"} inset-0 bg-black/50 z-40 lg:hidden`}
               onClick={() => setIsOpen(false)}
-            >
-              {item.label}
-            </Link>
-          ))}
+            />
 
-          {/* Cuenta — navega a /perfil si hay sesión, abre auth si no */}
-          <button
-            onClick={handleCuentaClick}
-            className="text-white font-extrabold text-xl tracking-widest uppercase hover:text-[#00e5ff] transition-colors text-left cursor-pointer"
-          >
-            Cuenta
-          </button>
-
-          <div className="pt-6 border-t border-white/20 flex items-center gap-6">
-            <button
-              onClick={toggleCart}
-              className="text-white hover:text-[#00e5ff] transition-colors flex items-center gap-2 text-xs font-extrabold tracking-widest uppercase cursor-pointer"
+            {/* Sidebar */}
+            <motion.div
+              key="mobile-sidebar"
+              initial={{ x: "-100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "-100%" }}
+              transition={{ duration: 0.32, ease: [0.4, 0, 0.2, 1] }}
+              className={`${isPreview ? "absolute" : "fixed"} top-0 left-0 h-full w-72 bg-[#0d40a5] shadow-2xl z-50 lg:hidden`}
             >
-              <ShoppingCart className="w-5 h-5" />
-              Carrito
-              {cartCount > 0 && (
-                <span className="bg-[#00e5ff] text-[#0d40a5] text-[9px] font-black px-1.5 rounded-full leading-4">
-                  {cartCount}
-                </span>
-              )}
-            </button>
-          </div>
-        </nav>
-      </div>
+              <div className="flex items-center justify-between p-6 border-b border-white/20">
+                <div className="flex items-center gap-2">
+                  <Zap className="w-6 h-6 text-[#00e5ff] fill-[#00e5ff]" />
+                  <span className="text-xl font-black tracking-tighter uppercase italic text-white">
+                    Bionutrex
+                  </span>
+                </div>
+                <button
+                  onClick={() => setIsOpen(false)}
+                  className="text-white hover:text-[#00e5ff] transition-colors cursor-pointer"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <nav className="flex flex-col p-6 space-y-6">
+                {[
+                  { label: "Nosotros", to: "/about" },
+                  { label: "Productos", to: "/products" },
+                  { label: "Categorías", to: "/categories" },
+                  { label: "Recursos", to: "/resources" },
+                  { label: "Blog", to: "/blog" },
+                ].map((item, i) => (
+                  <motion.div
+                    key={item.label}
+                    initial={{ opacity: 0, x: -16 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.08 + i * 0.05, duration: 0.22 }}
+                  >
+                    <Link
+                      to={item.to}
+                      className="text-white font-extrabold text-xl tracking-widest uppercase hover:text-[#00e5ff] transition-colors"
+                      onClick={() => setIsOpen(false)}
+                    >
+                      {item.label}
+                    </Link>
+                  </motion.div>
+                ))}
+
+                <motion.div
+                  initial={{ opacity: 0, x: -16 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.38, duration: 0.22 }}
+                >
+                  <button
+                    onClick={handleCuentaClick}
+                    className="text-white font-extrabold text-xl tracking-widest uppercase hover:text-[#00e5ff] transition-colors text-left cursor-pointer"
+                  >
+                    Cuenta
+                  </button>
+                </motion.div>
+
+                <motion.div
+                  initial={{ opacity: 0, x: -16 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.43, duration: 0.22 }}
+                  className="pt-6 border-t border-white/20 flex items-center gap-6"
+                >
+                  <button
+                    onClick={toggleCart}
+                    className="text-white hover:text-[#00e5ff] transition-colors flex items-center gap-2 text-xs font-extrabold tracking-widest uppercase cursor-pointer"
+                  >
+                    <ShoppingCart className="w-5 h-5" />
+                    Carrito
+                    {cartCount > 0 && (
+                      <span className="bg-[#00e5ff] text-[#0d40a5] text-[9px] font-black px-1.5 rounded-full leading-4">
+                        {cartCount}
+                      </span>
+                    )}
+                  </button>
+                </motion.div>
+              </nav>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </>
   );
 }
