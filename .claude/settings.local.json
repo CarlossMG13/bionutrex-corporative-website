@@ -7,7 +7,10 @@
       "Bash(npx claude-code-templates@latest --skill development/senior-security)",
       "Bash(npx claude-code-templates@latest --skill development/skill-creator)",
       "Bash(npx claude-code-templates@latest --skill development/senior-fullstack)",
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "Bash(node -e \"const p = require\\('./package.json'\\); console.log\\('framer-motion:', p.dependencies['framer-motion']\\); console.log\\('react:', p.dependencies['react']\\)\")",
+      "Bash(node -e ' *)",
+      "Bash(node --input-type=module)"
     ]
   }
 }

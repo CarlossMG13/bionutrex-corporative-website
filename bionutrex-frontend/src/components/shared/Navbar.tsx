@@ -1,7 +1,6 @@
 import * as React from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useState, useEffect, useRef } from "react";
-import { AnimatePresence, motion } from "framer-motion";
 import { Menu, X, Zap, Search, User, ShoppingCart, LogOut, Package } from "lucide-react";
 import { NavMegaMenu } from "./NavMegaMenu";
 import { useCart } from "@/contexts/CartContext";
@@ -75,6 +74,14 @@ function UserButton({ className = "" }: { className?: string }) {
             <p className="text-[10px] text-gray-400 truncate">{user.email}</p>
           </div>
           <button
+            onClick={() => { setDropOpen(false); navigate("/perfil?tab=datos"); }}
+            className="w-full flex items-center gap-3 px-4 py-3 text-xs font-bold text-gray-600
+                       hover:bg-gray-50 hover:text-[#0d40a5] transition-colors cursor-pointer"
+          >
+            <User className="w-4 h-4" />
+            Mi perfil
+          </button>
+          <button
             onClick={() => { setDropOpen(false); navigate("/perfil"); }}
             className="w-full flex items-center gap-3 px-4 py-3 text-xs font-bold text-gray-600
                        hover:bg-gray-50 hover:text-[#0d40a5] transition-colors cursor-pointer"
@@ -109,7 +116,7 @@ export function Navbar({
   const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
   const [isVisible, setIsVisible] = useState(true);
-  const [lastScrollY, setLastScrollY] = useState(0);
+  const lastScrollYRef = useRef(0);
 
   const [activeMenu, setActiveMenu] = useState<string | null>(null);
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -130,19 +137,19 @@ export function Navbar({
   useEffect(() => {
     const controlNavbar = () => {
       const currentScrollY = window.scrollY;
-      if (currentScrollY > lastScrollY && currentScrollY > 50) {
+      if (currentScrollY > lastScrollYRef.current && currentScrollY > 50) {
         setIsVisible(false);
       } else {
         setIsVisible(true);
       }
-      setLastScrollY(currentScrollY);
+      lastScrollYRef.current = currentScrollY;
     };
 
     if (!isPreview) {
-      window.addEventListener("scroll", controlNavbar);
+      window.addEventListener("scroll", controlNavbar, { passive: true });
     }
     return () => window.removeEventListener("scroll", controlNavbar);
-  }, [lastScrollY, isPreview]);
+  }, [isPreview]);
 
   useEffect(() => {
     const handleResize = () => {
@@ -164,11 +171,13 @@ export function Navbar({
   return (
     <>
       <header
+        style={{
+          transform: isVisible || isPreview ? "translateY(0)" : "translateY(-100%)",
+          transition: "transform 0.3s ease-out",
+        }}
         className={`${
           isPreview ? "relative" : "fixed top-0 left-0 right-0 z-50"
-        } bg-white/90 backdrop-blur-md border-b border-slate-100 transition-transform duration-300 ${
-          isVisible || isPreview ? "translate-y-0" : "-translate-y-full"
-        }`}
+        } bg-white/90 backdrop-blur-md border-b border-slate-100`}
       >
         <div className="max-w-7xl mx-auto px-5 h-16 lg:h-20">
           {/* ── Mobile (< lg): grid 3 columnas ── */}
@@ -282,106 +291,110 @@ export function Navbar({
         />
       </header>
 
-      {/* Mobile menu — AnimatePresence para slide + fade */}
-      <AnimatePresence>
-        {isOpen && (
-          <>
-            {/* Overlay */}
-            <motion.div
-              key="mobile-overlay"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.25 }}
-              className={`${isPreview ? "absolute" : "fixed"} inset-0 bg-black/50 z-40 lg:hidden`}
-              onClick={() => setIsOpen(false)}
-            />
+      {/* Mobile menu */}
 
-            {/* Sidebar */}
-            <motion.div
-              key="mobile-sidebar"
-              initial={{ x: "-100%" }}
-              animate={{ x: 0 }}
-              exit={{ x: "-100%" }}
-              transition={{ duration: 0.32, ease: [0.4, 0, 0.2, 1] }}
-              className={`${isPreview ? "absolute" : "fixed"} top-0 left-0 h-full w-72 bg-[#0d40a5] shadow-2xl z-50 lg:hidden`}
+      {/* Overlay */}
+      <div
+        onClick={() => setIsOpen(false)}
+        style={{
+          opacity: isOpen ? 1 : 0,
+          pointerEvents: isOpen ? "auto" : "none",
+          transition: "opacity 0.25s ease-out",
+        }}
+        className={`${isPreview ? "absolute" : "fixed"} inset-0 bg-black/50 z-40 lg:hidden`}
+      />
+
+      {/* Sidebar */}
+      <div
+        style={{
+          transform: isOpen ? "translateX(0)" : "translateX(-100%)",
+          transition: "transform 0.32s ease-out",
+        }}
+        className={`${isPreview ? "absolute" : "fixed"} top-0 left-0 h-full w-72 bg-[#0d40a5] shadow-2xl z-50 lg:hidden`}
+        aria-hidden={!isOpen}
+      >
+        <div className="flex items-center justify-between p-6 border-b border-white/20">
+          <div className="flex items-center gap-2">
+            <Zap className="w-6 h-6 text-[#00e5ff] fill-[#00e5ff]" />
+            <span className="text-xl font-black tracking-tighter uppercase italic text-white">
+              Bionutrex
+            </span>
+          </div>
+          <button
+            onClick={() => setIsOpen(false)}
+            className="text-white hover:text-[#00e5ff] transition-colors cursor-pointer"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        <nav className="flex flex-col p-6 space-y-6">
+          {[
+            { label: "Nosotros", to: "/about" },
+            { label: "Productos", to: "/products" },
+            { label: "Categorías", to: "/categories" },
+            { label: "Recursos", to: "/resources" },
+            { label: "Blog", to: "/blog" },
+          ].map((item, i) => (
+            <div
+              key={item.label}
+              style={{
+                opacity: isOpen ? 1 : 0,
+                transform: isOpen ? "translateX(0)" : "translateX(-16px)",
+                transition: "opacity 0.22s ease-out, transform 0.22s ease-out",
+                transitionDelay: isOpen ? `${0.08 + i * 0.05}s` : "0s",
+              }}
             >
-              <div className="flex items-center justify-between p-6 border-b border-white/20">
-                <div className="flex items-center gap-2">
-                  <Zap className="w-6 h-6 text-[#00e5ff] fill-[#00e5ff]" />
-                  <span className="text-xl font-black tracking-tighter uppercase italic text-white">
-                    Bionutrex
-                  </span>
-                </div>
-                <button
-                  onClick={() => setIsOpen(false)}
-                  className="text-white hover:text-[#00e5ff] transition-colors cursor-pointer"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
+              <Link
+                to={item.to}
+                className="text-white font-extrabold text-xl tracking-widest uppercase hover:text-[#00e5ff] transition-colors"
+                onClick={() => setIsOpen(false)}
+              >
+                {item.label}
+              </Link>
+            </div>
+          ))}
 
-              <nav className="flex flex-col p-6 space-y-6">
-                {[
-                  { label: "Nosotros", to: "/about" },
-                  { label: "Productos", to: "/products" },
-                  { label: "Categorías", to: "/categories" },
-                  { label: "Recursos", to: "/resources" },
-                  { label: "Blog", to: "/blog" },
-                ].map((item, i) => (
-                  <motion.div
-                    key={item.label}
-                    initial={{ opacity: 0, x: -16 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.08 + i * 0.05, duration: 0.22 }}
-                  >
-                    <Link
-                      to={item.to}
-                      className="text-white font-extrabold text-xl tracking-widest uppercase hover:text-[#00e5ff] transition-colors"
-                      onClick={() => setIsOpen(false)}
-                    >
-                      {item.label}
-                    </Link>
-                  </motion.div>
-                ))}
+          <div
+            style={{
+              opacity: isOpen ? 1 : 0,
+              transform: isOpen ? "translateX(0)" : "translateX(-16px)",
+              transition: "opacity 0.22s ease-out, transform 0.22s ease-out",
+              transitionDelay: isOpen ? "0.38s" : "0s",
+            }}
+          >
+            <button
+              onClick={handleCuentaClick}
+              className="text-white font-extrabold text-xl tracking-widest uppercase hover:text-[#00e5ff] transition-colors text-left cursor-pointer"
+            >
+              Cuenta
+            </button>
+          </div>
 
-                <motion.div
-                  initial={{ opacity: 0, x: -16 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.38, duration: 0.22 }}
-                >
-                  <button
-                    onClick={handleCuentaClick}
-                    className="text-white font-extrabold text-xl tracking-widest uppercase hover:text-[#00e5ff] transition-colors text-left cursor-pointer"
-                  >
-                    Cuenta
-                  </button>
-                </motion.div>
-
-                <motion.div
-                  initial={{ opacity: 0, x: -16 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.43, duration: 0.22 }}
-                  className="pt-6 border-t border-white/20 flex items-center gap-6"
-                >
-                  <button
-                    onClick={toggleCart}
-                    className="text-white hover:text-[#00e5ff] transition-colors flex items-center gap-2 text-xs font-extrabold tracking-widest uppercase cursor-pointer"
-                  >
-                    <ShoppingCart className="w-5 h-5" />
-                    Carrito
-                    {cartCount > 0 && (
-                      <span className="bg-[#00e5ff] text-[#0d40a5] text-[9px] font-black px-1.5 rounded-full leading-4">
-                        {cartCount}
-                      </span>
-                    )}
-                  </button>
-                </motion.div>
-              </nav>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
+          <div
+            style={{
+              opacity: isOpen ? 1 : 0,
+              transform: isOpen ? "translateX(0)" : "translateX(-16px)",
+              transition: "opacity 0.22s ease-out, transform 0.22s ease-out",
+              transitionDelay: isOpen ? "0.43s" : "0s",
+            }}
+            className="pt-6 border-t border-white/20 flex items-center gap-6"
+          >
+            <button
+              onClick={toggleCart}
+              className="text-white hover:text-[#00e5ff] transition-colors flex items-center gap-2 text-xs font-extrabold tracking-widest uppercase cursor-pointer"
+            >
+              <ShoppingCart className="w-5 h-5" />
+              Carrito
+              {cartCount > 0 && (
+                <span className="bg-[#00e5ff] text-[#0d40a5] text-[9px] font-black px-1.5 rounded-full leading-4">
+                  {cartCount}
+                </span>
+              )}
+            </button>
+          </div>
+        </nav>
+      </div>
     </>
   );
 }

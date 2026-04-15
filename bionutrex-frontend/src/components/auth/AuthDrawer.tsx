@@ -1,5 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useLayoutEffect } from "react";
 import { AnimatePresence, motion } from "framer-motion";
+// AnimatePresence + motion still used for the internal view-switch (login ↔ register)
 import { X, User, Mail, Lock, Eye, EyeOff, Zap, CheckCircle, ArrowRight, LogIn } from "lucide-react";
 import { useAuthUser } from "@/contexts/AuthUserContext";
 import { toast } from "sonner";
@@ -308,15 +309,22 @@ export function AuthDrawer() {
   const [view, setView] = useState<View>("login");
   const [registeredEmail, setRegisteredEmail] = useState("");
 
-  // Lock body scroll when drawer is open
-  useEffect(() => {
+  // Lock body scroll — useLayoutEffect corre antes del primer paint,
+  // evitando que el scrollbar desaparezca a mitad de la animación (stutter).
+  useLayoutEffect(() => {
     if (isAuthOpen) {
+      const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
       document.body.style.overflow = "hidden";
+      if (scrollbarWidth > 0) {
+        document.body.style.paddingRight = `${scrollbarWidth}px`;
+      }
     } else {
       document.body.style.overflow = "";
+      document.body.style.paddingRight = "";
     }
     return () => {
       document.body.style.overflow = "";
+      document.body.style.paddingRight = "";
     };
   }, [isAuthOpen]);
 
@@ -334,29 +342,27 @@ export function AuthDrawer() {
   };
 
   return (
-    <AnimatePresence>
-      {isAuthOpen && (
-        <>
-          {/* ── Backdrop ── */}
-          <motion.div
-            key="auth-backdrop"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.3 }}
-            className="fixed inset-0 bg-black/60 z-[59]"
-            onClick={handleClose}
-          />
+    <>
+      {/* ── Backdrop ── */}
+      <div
+        onClick={handleClose}
+        style={{
+          opacity: isAuthOpen ? 1 : 0,
+          pointerEvents: isAuthOpen ? "auto" : "none",
+          transition: "opacity 0.3s ease-out",
+        }}
+        className="fixed inset-0 bg-black/60 z-[59]"
+      />
 
-          {/* ── Panel ── */}
-          <motion.div
-            key="auth-panel"
-            initial={{ x: "100%" }}
-            animate={{ x: 0 }}
-            exit={{ x: "100%" }}
-            transition={{ duration: 0.35, ease: [0.4, 0, 0.2, 1] }}
-            className="fixed right-0 top-0 h-screen w-full sm:w-[420px] bg-[#2a2a2a] z-[60] flex flex-col shadow-2xl"
-          >
+      {/* ── Panel ── */}
+      <div
+        style={{
+          transform: isAuthOpen ? "translateX(0)" : "translateX(100%)",
+          transition: "transform 0.35s ease-out",
+        }}
+        className="fixed right-0 top-0 h-screen w-full sm:w-[420px] bg-[#2a2a2a] z-[60] flex flex-col shadow-2xl"
+        aria-hidden={!isAuthOpen}
+      >
             {/* ── Header ── */}
             <div className="flex items-center justify-between px-6 py-5 border-b border-white/10 shrink-0">
               <div className="flex items-center gap-2">
@@ -402,9 +408,7 @@ export function AuthDrawer() {
                 </motion.div>
               </AnimatePresence>
             </div>
-          </motion.div>
-        </>
-      )}
-    </AnimatePresence>
+      </div>
+    </>
   );
 }

@@ -35,6 +35,18 @@ export const userAuthMiddleware = async (req, res, next) => {
     const email = supabaseUser.email;
     const name = supabaseUser.user_metadata?.name || null;
 
+    // Bloquear emails de admin: esta ruta es exclusiva de clientes
+    const adminRecord = await prisma.admin.findUnique({
+      where: { email },
+      select: { id: true },
+    });
+    if (adminRecord) {
+      return res.status(403).json({
+        error: "admin_account",
+        message: "Esta cuenta es de uso exclusivo del panel de administración.",
+      });
+    }
+
     // Upsert: crea el User si no existe (primera sesión post-verificación)
     const dbUser = await prisma.user.upsert({
       where: { email },
@@ -71,6 +83,13 @@ export const optionalUserAuth = async (req, res, next) => {
 
     const email = supabaseUser.email;
     const name = supabaseUser.user_metadata?.name || null;
+
+    // Si es admin, no lo tratamos como cliente (falla silenciosa en rutas opcionales)
+    const adminRecord = await prisma.admin.findUnique({
+      where: { email },
+      select: { id: true },
+    });
+    if (adminRecord) return next();
 
     const dbUser = await prisma.user.upsert({
       where: { email },

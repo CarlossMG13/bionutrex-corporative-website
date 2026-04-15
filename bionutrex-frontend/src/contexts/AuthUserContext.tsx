@@ -65,8 +65,20 @@ export function AuthUserProvider({ children }: { children: React.ReactNode }) {
     try {
       const { data } = await userAPI.sync();
       setUser(data.user);
-    } catch {
-      // Si sync falla (p.ej. email aún no verificado), intenta solo getMe
+    } catch (err: unknown) {
+      const status = (err as { response?: { status?: number; data?: { error?: string } } })
+        ?.response?.status;
+      const code = (err as { response?: { data?: { error?: string } } })
+        ?.response?.data?.error;
+
+      // Cuenta de admin — no crear perfil de cliente, pero NO cerrar sesión
+      // (la sesión puede pertenecer legítimamente al panel de admin)
+      if (status === 403 && code === "admin_account") {
+        setUser(null);
+        return;
+      }
+
+      // Si sync falla por otro motivo (email aún no verificado), intenta getMe
       try {
         const { data } = await userAPI.getMe();
         setUser(data);
@@ -130,12 +142,11 @@ export function AuthUserProvider({ children }: { children: React.ReactNode }) {
   );
 
   const login = useCallback(async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({
+    const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
     if (error) {
-      // Traducción de errores comunes de Supabase
       const msg =
         error.message === "Invalid login credentials"
           ? "Correo o contraseña incorrectos"
@@ -144,6 +155,28 @@ export function AuthUserProvider({ children }: { children: React.ReactNode }) {
           : error.message;
       return { success: false, error: msg };
     }
+
+    // Verificar que la cuenta sea de cliente (no admin)
+    if (data.session) {
+      try {
+        await userAPI.sync();
+      } catch (err: unknown) {
+        // Si el backend rechaza por ser cuenta de admin, cerrar sesión y avisar
+        const status = (err as { response?: { status?: number; data?: { error?: string } } })
+          ?.response?.status;
+        const code = (err as { response?: { data?: { error?: string } } })
+          ?.response?.data?.error;
+        if (status === 403 && code === "admin_account") {
+          await supabase.auth.signOut();
+          return {
+            success: false,
+            error: "Esta cuenta pertenece al panel de administración y no puede usarse en la tienda.",
+          };
+        }
+        // Otros errores de sync no bloquean el login
+      }
+    }
+
     return { success: true };
   }, []);
 
