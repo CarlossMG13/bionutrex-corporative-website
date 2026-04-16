@@ -109,6 +109,72 @@ export interface Category {
   slug: string;
 }
 
+export interface TechnicalResource {
+  id: string;
+  title: string;
+  reference?: string;
+  category: string;
+  productLine?: string;
+  description?: string;
+  fileUrl?: string;
+  icon: string;
+  iconColor: string;
+  active: boolean;
+  order: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CustomerUser {
+  id: number;
+  email: string;
+  name?: string | null;
+  phone?: string | null;
+  image?: string | null;
+  emailVerified?: string | null;
+  createdAt: string;
+  _count?: { orders: number };
+}
+
+export interface UserAddress {
+  id: number;
+  userId: number;
+  label: string;
+  address: string;
+  city: string;
+  state: string;
+  zip: string;
+  isDefault: boolean;
+  createdAt: string;
+}
+
+export interface OrderItem {
+  id: number;
+  productId: string;
+  quantity: number;
+  price: number;
+  product?: {
+    id: string;
+    name: string;
+    imageUrl: string;
+  };
+}
+
+export interface Order {
+  id: number;
+  paymentIntentId?: string;
+  status: string;
+  paid: boolean;
+  total: number;
+  fullName: string;
+  email: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  createdAt: string;
+  items: OrderItem[];
+}
+
 export interface Product {
   id: string;
   name: string;
@@ -118,6 +184,10 @@ export interface Product {
   badgeColor?: string;
   rating?: number;
   reviewCount?: number;
+  images?: string;
+  ingredients?: string;
+  longDescription?: string;
+  features?: string;
   featured: boolean;
   featuredOrder: number;
   active: boolean;

@@ -1,11 +1,13 @@
 import express from "express";
 import cors from "cors";
+import session from "express-session";
 import dotenv from "dotenv";
-import path from "path";
-import { fileURLToPath } from "url";
-import fs from "fs";
 import multer from "multer";
-import { v4 as uuidv4 } from "uuid";
+
+// Load env before importing lib modules that read process.env
+dotenv.config();
+
+import { uploadFile, deleteFile, BUCKETS } from "./lib/storage.js";
 
 console.log("📦 Starting BioNutrex Backend...");
 
@@ -17,16 +19,16 @@ import homeSectionRoutes from "./routes/homeSections.js";
 import blogPostRoutes from "./routes/blogPosts.js";
 import productRoutes from "./routes/products.js";
 import categoryRoutes from "./routes/categories.js";
+import technicalResourceRoutes from "./routes/technicalResources.js";
+import cartRoutes from "./routes/cart.js";
+import checkoutRoutes from "./routes/checkout.js";
+import adminOrdersRoutes from "./routes/admin-orders.js";
+import userRoutes from "./routes/users.js";
 console.log("✅ Routes imported successfully");
 
-// ES modules setup
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 console.log("📂 Path setup complete");
 
 // Load environment variables
-console.log("⚙️  Loading environment variables...");
-dotenv.config();
 console.log("✅ Environment variables loaded");
 
 const app = express();
@@ -36,74 +38,48 @@ console.log(`🔧 Creating Express app on port ${PORT}...`);
 
 // Middleware
 console.log("📝 Setting up middleware...");
-app.use(cors());
+app.use(cors({
+  origin: process.env.FRONTEND_URL || "http://localhost:5173",
+  credentials: true,
+}));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(session({
+  secret: process.env.SESSION_SECRET || "bionutrex-secret-key",
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    secure: false,
+    httpOnly: true,
+    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 días
+  },
+}));
 console.log("✅ Middleware configured");
 
-// Configuración de multer para subida de archivos
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    const uploadsPath = path.join(__dirname, "../uploads");
-    // Crear directorio si no existe
-    if (!fs.existsSync(uploadsPath)) {
-      fs.mkdirSync(uploadsPath, { recursive: true });
-    }
-    cb(null, uploadsPath);
-  },
-  filename: function (req, file, cb) {
-    // Generar nombre único con UUID
-    const ext = path.extname(file.originalname);
-    const name = path.basename(file.originalname, ext);
-    const uniqueName = `${name}-${uuidv4()}${ext}`;
-    cb(null, uniqueName);
-  },
-});
-
-// Filtro para permitir múltiples tipos de archivos
+// Multer en memoria — los archivos se suben directo a Supabase Storage
 const fileFilter = (req, file, cb) => {
   const allowedTypes = [
-    "image/jpeg",
-    "image/jpg",
-    "image/png",
-    "image/gif",
-    "image/webp",
-    "image/svg+xml",
-    "video/mp4",
-    "video/avi",
-    "video/mov",
-    "video/mkv",
-    "video/webm",
+    "image/jpeg", "image/jpg", "image/png", "image/gif",
+    "image/webp", "image/svg+xml",
+    "video/mp4", "video/avi", "video/mov", "video/mkv", "video/webm",
     "application/pdf",
     "application/msword",
     "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
     "text/plain",
-    "audio/mpeg",
-    "audio/wav",
-    "audio/ogg",
-    "application/zip",
-    "application/x-rar-compressed",
-    "application/x-7z-compressed",
+    "audio/mpeg", "audio/wav", "audio/ogg",
+    "application/zip", "application/x-rar-compressed", "application/x-7z-compressed",
   ];
-
-  if (allowedTypes.includes(file.mimetype)) {
-    cb(null, true);
-  } else {
-    cb(new Error("Tipo de archivo no permitido"), false);
-  }
+  if (allowedTypes.includes(file.mimetype)) cb(null, true);
+  else cb(new Error("Tipo de archivo no permitido"), false);
 };
 
 const upload = multer({
-  storage: storage,
-  fileFilter: fileFilter,
-  limits: {
-    fileSize: 500 * 1024 * 1024, // 500MB
-  },
+  storage: multer.memoryStorage(),
+  fileFilter,
+  limits: { fileSize: 500 * 1024 * 1024 },
 });
 
-// Servir archivos estáticos (uploads)
-console.log("🖼️  Setting up static file serving...");
-app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
+// Los archivos ahora se sirven desde Supabase Storage (no hay carpeta /uploads local)
 
 // Routes
 console.log("🛣️  Registering API routes...");
@@ -113,6 +89,11 @@ app.use("/api/home-sections", homeSectionRoutes);
 app.use("/api/blog-posts", blogPostRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/categories", categoryRoutes);
+app.use("/api/technical-resources", technicalResourceRoutes);
+app.use("/api/cart", cartRoutes);
+app.use("/api/checkout", checkoutRoutes);
+app.use("/api/admin/orders", adminOrdersRoutes);
+app.use("/api/users", userRoutes);
 console.log("✅ All routes registered");
 
 // Health check
@@ -124,43 +105,39 @@ app.get("/api/health", (req, res) => {
   });
 });
 
-// List uploaded files
-app.get("/api/uploads/list", (req, res) => {
+// List uploaded files — lista los archivos del bucket cms-assets
+app.get("/api/uploads/list", async (req, res) => {
   try {
-    const uploadsPath = path.join(__dirname, "../uploads");
-
-    // Verificar si el directorio existe
-    if (!fs.existsSync(uploadsPath)) {
-      return res.json([]);
-    }
-
-    const files = fs.readdirSync(uploadsPath).filter((file) => {
-      // Filtrar archivos comunes de media
-      return file.match(
-        /\.(jpg|jpeg|png|gif|webp|svg|mp4|avi|mov|mkv|webm|pdf|doc|docx|txt|mp3|wav|ogg|zip|rar|7z)$/i,
-      );
-    });
-
-    res.json(files);
+    const { supabase } = await import("./lib/supabase.js");
+    const { data, error } = await supabase.storage.from(BUCKETS.CMS).list("", { limit: 200 });
+    if (error) return res.status(500).json({ error: error.message });
+    res.json(data.map((f) => f.name));
   } catch (error) {
     console.error("Error listing uploads:", error);
     res.status(500).json({ error: "Error listing uploaded files" });
   }
 });
 
-// Upload files endpoint
-app.post("/api/uploads", upload.single("image"), (req, res) => {
+// Upload single file — sube al bucket cms-assets
+app.post("/api/uploads", upload.single("image"), async (req, res) => {
   try {
-    if (!req.file) {
-      return res.status(400).json({ error: "No se ha subido ningún archivo" });
-    }
+    if (!req.file) return res.status(400).json({ error: "No se ha subido ningún archivo" });
+
+    // El folder puede venir como query param: ?folder=sliders
+    const folder = req.query.folder || "general";
+    const url = await uploadFile(
+      req.file.buffer,
+      BUCKETS.CMS,
+      folder,
+      req.file.originalname,
+      req.file.mimetype,
+    );
 
     res.json({
       message: "Archivo subido exitosamente",
-      filename: req.file.filename,
       originalName: req.file.originalname,
       size: req.file.size,
-      url: `/uploads/${req.file.filename}`,
+      url,
     });
   } catch (error) {
     console.error("Error uploading file:", error);
@@ -168,20 +145,20 @@ app.post("/api/uploads", upload.single("image"), (req, res) => {
   }
 });
 
-// Upload multiple files endpoint
-app.post("/api/uploads/multiple", upload.array("files", 10), (req, res) => {
+// Upload multiple files
+app.post("/api/uploads/multiple", upload.array("files", 10), async (req, res) => {
   try {
     if (!req.files || req.files.length === 0) {
       return res.status(400).json({ error: "No se han subido archivos" });
     }
 
-    const uploadedFiles = req.files.map((file) => ({
-      filename: file.filename,
-      originalName: file.originalname,
-      size: file.size,
-      url: `/uploads/${file.filename}`,
-      type: file.mimetype,
-    }));
+    const folder = req.query.folder || "general";
+    const uploadedFiles = await Promise.all(
+      req.files.map(async (file) => {
+        const url = await uploadFile(file.buffer, BUCKETS.CMS, folder, file.originalname, file.mimetype);
+        return { originalName: file.originalname, size: file.size, url, type: file.mimetype };
+      }),
+    );
 
     res.json({
       message: `${uploadedFiles.length} archivo(s) subido(s) exitosamente`,
@@ -193,28 +170,16 @@ app.post("/api/uploads/multiple", upload.array("files", 10), (req, res) => {
   }
 });
 
-// Endpoint para eliminar un archivo de /uploads
-app.delete("/api/uploads/:fileName", async (req, res) => {
+// Delete file — recibe la URL pública y la elimina de Supabase Storage
+app.delete("/api/uploads", async (req, res) => {
   try {
-    const { fileName } = req.params;
-    const filePath = path.join(__dirname, "../uploads", fileName);
+    const { url } = req.body;
+    if (!url) return res.status(400).json({ error: "Se requiere la URL del archivo" });
 
-    // Verificar si el archivo existe
-    if (!fs.existsSync(filePath)) {
-      return res.status(404).json({ error: "Archivo no encontrado" });
-    }
-
-    // Eliminar el archivo
-    fs.unlink(filePath, (err) => {
-      if (err) {
-        console.error("Error al eliminar el archivo:", err);
-        return res.status(500).json({ error: "Error al eliminar el archivo" });
-      }
-
-      res.json({ message: "Archivo eliminado correctamente" });
-    });
+    await deleteFile(url);
+    res.json({ message: "Archivo eliminado correctamente" });
   } catch (error) {
-    console.error("Error en la eliminación del archivo:", error);
+    console.error("Error deleting file:", error);
     res.status(500).json({ error: "Error interno del servidor" });
   }
 });

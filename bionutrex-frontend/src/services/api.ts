@@ -5,23 +5,28 @@ import type {
   BlogPost,
   AuthResponse,
   Product,
+  TechnicalResource,
+  CustomerUser,
+  UserAddress,
 } from "@/types";
+import { supabase } from "@/lib/supabase";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001/api";
 
 // Config Axios
 const api = axios.create({
   baseURL: API_URL,
+  withCredentials: true,
   headers: {
     "Content-Type": "application/json",
   },
 });
 
-// Interceptor para agregar el Token
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem("token");
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
+// Interceptor para agregar el token de Supabase Auth
+api.interceptors.request.use(async (config) => {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (session?.access_token) {
+    config.headers.Authorization = `Bearer ${session.access_token}`;
   }
   return config;
 });
@@ -109,6 +114,7 @@ export const productAPI = {
   getAll: () => api.get<Product[]>("/products"),
   getAllAdmin: () => api.get<Product[]>("/products/admin/all"),
   getFeatured: () => api.get<Product[]>("/products/featured"),
+  getById: (id: string) => api.get<Product>(`/products/${id}`),
   create: (formData: FormData) =>
     api.post<Product>("/products", formData, {
       headers: { "Content-Type": "multipart/form-data" },
@@ -124,6 +130,62 @@ export const categoryAPI = {
   getAll: () => api.get("/categories"),
   create: (data: { name: string; slug: string }) =>
     api.post("/categories", data),
+};
+
+export const technicalResourceAPI = {
+  getAll: () => api.get<TechnicalResource[]>("/technical-resources"),
+  getAllAdmin: () => api.get<TechnicalResource[]>("/technical-resources/admin/all"),
+  create: (formData: FormData) =>
+    api.post<TechnicalResource>("/technical-resources", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    }),
+  update: (id: string, formData: FormData) =>
+    api.put<TechnicalResource>(`/technical-resources/${id}`, formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    }),
+  delete: (id: string) => api.delete(`/technical-resources/${id}`),
+};
+
+export const cartAPI = {
+  getCart: () => api.get("/cart"),
+  addItem: (productId: string) => api.post(`/cart/add/${productId}`),
+  removeItem: (productId: string) => api.post(`/cart/remove/${productId}`),
+  deleteItem: (productId: string) => api.delete(`/cart/item/${productId}`),
+  clearCart: () => api.delete("/cart"),
+};
+
+// ─── Customer Auth API ───────────────────────────────────────────────────────
+
+/**
+ * Llama al backend con el token de Supabase ya en el interceptor.
+ * El backend hace upsert del User y marca el email como verificado.
+ */
+export const userAPI = {
+  /** Obtiene el perfil del cliente autenticado */
+  getMe: () => api.get<CustomerUser>("/users/me"),
+
+  /**
+   * Sincroniza el User en la BD (llámalo después del primer SIGNED_IN post-verificación).
+   * Envía el email de bienvenida la primera vez.
+   */
+  sync: () => api.post<{ user: CustomerUser; isNew: boolean }>("/users/sync"),
+
+  /** Actualiza nombre, teléfono o imagen del perfil */
+  updateMe: (data: { name?: string; phone?: string; image?: string }) =>
+    api.put<CustomerUser>("/users/me", data),
+
+  /** Pedidos del cliente */
+  getMyOrders: () => api.get("/users/me/orders"),
+
+  /** Direcciones guardadas */
+  getAddresses: () => api.get<UserAddress[]>("/users/me/addresses"),
+  createAddress: (data: Omit<UserAddress, "id" | "userId" | "createdAt">) =>
+    api.post<UserAddress>("/users/me/addresses", data),
+  updateAddress: (id: number, data: Partial<Omit<UserAddress, "id" | "userId" | "createdAt">>) =>
+    api.put<UserAddress>(`/users/me/addresses/${id}`, data),
+  deleteAddress: (id: number) => api.delete(`/users/me/addresses/${id}`),
+  setDefaultAddress: (id: number) =>
+    api.patch<UserAddress>(`/users/me/addresses/${id}/default`),
 };
 
 export default api;

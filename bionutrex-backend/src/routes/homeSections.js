@@ -2,6 +2,7 @@ import express from "express";
 import prisma from "../utils/db.js";
 import { authMiddleware } from "../middleware/auth.js";
 import { upload } from "../middleware/upload.js";
+import { uploadFile, BUCKETS } from "../lib/storage.js";
 
 const router = express.Router();
 
@@ -146,7 +147,13 @@ router.post("/", authMiddleware, upload.single("image"), async (req, res) => {
         .json({ error: "Section with this key already exists" });
     }
 
-    const imageUrl = req.file ? `/uploads/${req.file.filename}` : null;
+    let imageUrl = null;
+    if (req.file) {
+      imageUrl = await uploadFile(
+        req.file.buffer, BUCKETS.CMS, "sections",
+        req.file.originalname, req.file.mimetype,
+      );
+    }
 
     const section = await prisma.homeSection.create({
       data: {
@@ -214,7 +221,7 @@ router.put(
             title: title || existingSection.title,
             subtitle:
               subtitle !== undefined ? subtitle : existingSection.subtitle,
-            content: content || existingSection.content,
+            content: content !== undefined ? content : existingSection.content,
             buttonText:
               buttonText !== undefined
                 ? buttonText
@@ -223,6 +230,14 @@ router.put(
               buttonLink !== undefined
                 ? buttonLink
                 : existingSection.buttonLink,
+            button2Text:
+              req.body.button2Text !== undefined
+                ? req.body.button2Text
+                : existingSection.button2Text,
+            button2Link:
+              req.body.button2Link !== undefined
+                ? req.body.button2Link
+                : existingSection.button2Link,
             order:
               order !== undefined ? parseInt(order) : existingSection.order,
             active:
@@ -303,11 +318,19 @@ router.put(
           title: title || existingSection.title,
           subtitle:
             subtitle !== undefined ? subtitle : existingSection.subtitle,
-          content: content || existingSection.content,
+          content: content !== undefined ? content : existingSection.content,
           buttonText:
             buttonText !== undefined ? buttonText : existingSection.buttonText,
           buttonLink:
             buttonLink !== undefined ? buttonLink : existingSection.buttonLink,
+          button2Text:
+            req.body.button2Text !== undefined
+              ? req.body.button2Text
+              : existingSection.button2Text,
+          button2Link:
+            req.body.button2Link !== undefined
+              ? req.body.button2Link
+              : existingSection.button2Link,
           order: order !== undefined ? parseInt(order) : existingSection.order,
           active:
             active !== undefined

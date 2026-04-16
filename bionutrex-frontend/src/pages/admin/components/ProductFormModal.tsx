@@ -23,6 +23,7 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
   const [formData, setFormData] = useState({
     name: product?.name || "",
     description: product?.description || "",
+    longDescription: product?.longDescription || "",
     badge: product?.badge || "",
     badgeColor: product?.badgeColor || "#0d40a5",
     rating: product?.rating || 5.0,
@@ -34,6 +35,9 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
     imageUrl: product?.imageUrl || "",
     imageSource: "url", // 'upload', 'library', 'url'
     imageFile: null as File | null,
+    images: product?.images || "",
+    ingredients: product?.ingredients || "",
+    features: product?.features || "",
   });
 
   const [variants, setVariants] = useState<Partial<ProductVariant>[]>(
@@ -99,6 +103,12 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
     } else if (formData.imageUrl) {
       submitData.append("imageUrl", formData.imageUrl);
     }
+
+    // Extra fields
+    submitData.append("longDescription", formData.longDescription);
+    submitData.append("images", formData.images);
+    submitData.append("ingredients", formData.ingredients);
+    submitData.append("features", formData.features);
 
     // Add variants as JSON
     submitData.append(
@@ -174,6 +184,66 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
               onChange={handleInputChange}
               rows={3}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0d40a5]"
+            />
+          </div>
+
+          {/* Descripción larga */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Descripción larga (detalle de producto)
+            </label>
+            <textarea
+              name="longDescription"
+              placeholder="Texto detallado que aparece en la página del producto"
+              value={formData.longDescription}
+              onChange={handleInputChange}
+              rows={3}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0d40a5]"
+            />
+          </div>
+
+          {/* Imágenes extra */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Imágenes extra (JSON)
+            </label>
+            <textarea
+              name="images"
+              placeholder={'["/uploads/img2.webp", "/uploads/img3.webp"]'}
+              value={formData.images}
+              onChange={handleInputChange}
+              rows={2}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0d40a5] font-mono text-xs"
+            />
+          </div>
+
+          {/* Ingredientes */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Ingredientes (JSON)
+            </label>
+            <textarea
+              name="ingredients"
+              placeholder={'[{"name":"Creatina Monohidratada","amount":"3000mg"}]'}
+              value={formData.ingredients}
+              onChange={handleInputChange}
+              rows={3}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0d40a5] font-mono text-xs"
+            />
+          </div>
+
+          {/* Features */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Características (JSON)
+            </label>
+            <textarea
+              name="features"
+              placeholder={'[{"icon":"bolt","title":"Energía","description":"...","color":"#0d40a5"}]'}
+              value={formData.features}
+              onChange={handleInputChange}
+              rows={3}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0d40a5] font-mono text-xs"
             />
           </div>
 

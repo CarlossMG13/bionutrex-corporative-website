@@ -6,8 +6,9 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 model Admin {
@@ -46,33 +47,30 @@ model Slider {
   @@map("sliders")
 }
 
-
 model HomeSection {
-  id            String   @id @default(cuid())
-  sectionKey    String   @unique
+  id            String         @id @default(cuid())
+  sectionKey    String         @unique
   title         String
   subtitle      String?
-  content       String   @db.Text
+  content       String         @db.Text
   imageUrl      String?
   buttonText    String?
   buttonLink    String?
   button2Text   String?
   button2Link   String?
-  active        Boolean  @default(true)
-  order         Int      @default(0)
-  // Campos para secciones con hero (about, etc.)
-  titleSegments String?  @db.Text
+  active        Boolean        @default(true)
+  order         Int            @default(0)
+  titleSegments String?        @db.Text
   accentColor   String?
-  mediaType     String   @default("image")
+  mediaType     String         @default("image")
   videoUrl      String?
-  videoMuted    Boolean  @default(true)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  videoMuted    Boolean        @default(true)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
   images        SectionImage[]
 
   @@map("home_sections")
 }
-
 
 model SectionImage {
   id        String      @id @default(cuid())
@@ -112,34 +110,37 @@ model Product {
   imageUrl      String
   badge         String?
   badgeColor    String?          @default("#0d40a5")
-  rating        Float            @default(5.0)
-  reviewCount   Int              @default(0)
-  featured      Boolean          @default(false)
+  rating          Float            @default(5.0)
+  reviewCount     Int              @default(0)
+  images          String?          @db.Text
+  ingredients     String?          @db.Text
+  longDescription String?          @db.Text
+  features        String?          @db.Text
+  featured        Boolean          @default(false)
   featuredOrder Int              @default(0)
   active        Boolean          @default(true)
   createdAt     DateTime         @default(now())
   updatedAt     DateTime         @updatedAt
   
-
-  // Relación con Categoría
   categoryId    String
   category      Category         @relation(fields: [categoryId], references: [id])
-
-  // Relación con Variantes
   variants      ProductVariant[]
+  
+  // Relaciones inversas añadidas para corregir errores de validación
+  orderItems    OrderItem[]
+  cartItems     CartItem[]
 
   @@map("products")
 }
 
 model ProductVariant {
   id        String   @id @default(cuid())
-  name      String   
-  price     Float    
+  name      String
+  price     Float
   stock     Int      @default(0)
-  sku       String?  @unique
+  sku       String?  @unique // Corregido el error de sintaxis .0.
   pieces    Int?
   grams     Float?
-
   
   productId String
   product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
@@ -149,10 +150,121 @@ model ProductVariant {
 
 model Category {
   id        String    @id @default(cuid())
-  name      String   
+  name      String
   slug      String    @unique
- 
   products  Product[]
 
   @@map("categories")
+}
+
+model User {
+  id            Int           @id @default(autoincrement())
+  email         String        @unique
+  password      String?       // Nullable — auth real via Supabase Auth
+  name          String?
+  phone         String?
+  image         String?
+  emailVerified DateTime?
+
+  orders        Order[]
+  cart          Cart?         // Relación 1:1 con Cart
+  addresses     UserAddress[] // Máximo 3 — validado en la aplicación
+
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  @@map("users")
+}
+
+model UserAddress {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  label     String   @default("Casa")
+  address   String   @db.VarChar(255)
+  city      String   @db.VarChar(100)
+  state     String   @db.VarChar(100)
+  zip       String   @db.VarChar(20)
+  isDefault Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("user_addresses")
+}
+
+model Order {
+  id              Int         @id @default(autoincrement())
+  userId          Int?
+  user            User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
+  fullName        String      @db.VarChar(255)
+  email           String
+  phone           String?     @db.VarChar(20)
+  address         String      @db.VarChar(255)
+  city            String?     @db.VarChar(100)
+  state           String?     @db.VarChar(100)
+  zip             String?     @db.VarChar(20)
+  total           Decimal?    @db.Decimal(10, 2)
+  paymentIntentId String?     @db.VarChar(255)
+  status          String      @default("pending")
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+  paid            Boolean     @default(false)
+  items           OrderItem[]
+
+  @@map("orders")
+}
+
+model OrderItem {
+  id         Int      @id @default(autoincrement())
+  orderId    Int
+  order      Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  productId  String
+  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  price      Decimal  @db.Decimal(10, 2)
+  quantity   Int      @default(1)
+
+  @@map("order_items")
+}
+
+model Cart {
+  id        Int        @id @default(autoincrement())
+  userId    Int?       @unique
+  user      User?      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime   @default(now())
+  items     CartItem[]
+
+  @@map("carts")
+}
+
+model CartItem {
+  id         Int      @id @default(autoincrement())
+  cartId     Int
+  cart       Cart     @relation(fields: [cartId], references: [id], onDelete: Cascade)
+
+  productId  String
+  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  quantity   Int      @default(1)
+
+  @@map("cart_items")
+}
+
+model TechnicalResource {
+  id          String   @id @default(cuid())
+  title       String
+  reference   String?
+  category    String
+  productLine String?
+  description String?
+  fileUrl     String?
+  icon        String   @default("description")
+  iconColor   String   @default("blue")
+  active      Boolean  @default(true)
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("technical_resources")
 }

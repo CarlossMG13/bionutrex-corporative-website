@@ -118,6 +118,22 @@ export default function ProductCatalog() {
     }
   };
 
+  const handleToggleFeatured = async (product: Product) => {
+    const nextFeatured = !product.featured;
+    // If adding: assign next order; if removing: reset to 0
+    const featuredCount = products.filter((p) => p.featured && p.id !== product.id).length;
+    const fd = new FormData();
+    fd.append("featured", String(nextFeatured));
+    fd.append("featuredOrder", nextFeatured ? String(featuredCount) : "0");
+    try {
+      const res = await productAPI.update(product.id, fd);
+      setProducts((prev) => prev.map((p) => (p.id === product.id ? res.data : p)));
+    } catch (error) {
+      console.error("Error toggling featured:", error);
+      alert("Error al actualizar el producto");
+    }
+  };
+
   const filteredProducts = products.filter((product) => {
     const matchesSearch = product.name
       .toLowerCase()
@@ -344,6 +360,13 @@ export default function ProductCatalog() {
                   {product.category?.name || "Sin categoría"}
                 </span>
                 <div className="flex gap-1">
+                  <button
+                    title={product.featured ? "Quitar de Bestsellers" : "Agregar a Bestsellers"}
+                    onClick={() => handleToggleFeatured(product)}
+                    className={`p-1.5 transition-colors ${product.featured ? "text-yellow-500 hover:text-yellow-600" : "text-gray-400 hover:text-yellow-500"}`}
+                  >
+                    <Star className={`w-4 h-4 ${product.featured ? "fill-yellow-400" : ""}`} />
+                  </button>
                   <button className="p-1.5 text-gray-400 hover:text-blue-600 transition-colors">
                     <Eye className="w-4 h-4" />
                   </button>

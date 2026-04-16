@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   X,
   Save,
@@ -25,7 +25,6 @@ interface SectionEditModalProps {
   section: HomeSection | null;
   onSave: (section: HomeSection) => void;
   onClose: () => void;
-  availableImages?: { src: string; name: string; type: "local" | "upload" }[];
   onFileUpload?: (event: React.ChangeEvent<HTMLInputElement>) => void;
 }
 
@@ -33,7 +32,6 @@ export function SectionEditModal({
   section,
   onSave,
   onClose,
-  availableImages = [],
   onFileUpload,
 }: SectionEditModalProps) {
   const [editingSection, setEditingSection] = useState<HomeSection | null>(
@@ -41,6 +39,10 @@ export function SectionEditModal({
   );
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [showImageGallery, setShowImageGallery] = useState<number | null>(null);
+  const [expertGalleryIdx, setExpertGalleryIdx] = useState<number | null>(null);
+  const [galleryImages, setGalleryImages] = useState<{ src: string; name: string }[]>([]);
+  // Stores the latest updateExpert fn from the about_team IIFE so the gallery modal can call it
+  const expertUpdateRef = useRef<((idx: number, field: string, val: string) => void) | null>(null);
 
   // Slider picker (solo para hero)
   const [heroSliders, setHeroSliders] = useState<Slider[]>([]);
@@ -217,6 +219,28 @@ export function SectionEditModal({
     }
   }, [section]);
 
+  // Cargar imágenes de galería cuando se abre el picker
+  useEffect(() => {
+    if (showImageGallery === null && expertGalleryIdx === null) return;
+    const LOCAL_IMAGES = [
+      "heroSection-img.jpg",
+      "MethImage.jpg",
+      "img1-grid-product.jpg",
+      "img2-grid-product.jpg",
+      "img3-grid-product.jpg",
+    ];
+    const local = LOCAL_IMAGES.map((name) => ({ src: `/images/${name}`, name }));
+    fetch(`${BACKEND_URL}/api/uploads/list`)
+      .then((r) => r.json())
+      .then((files: string[]) => {
+        const uploaded = files
+          .filter((f) => /\.(jpg|jpeg|png|gif|webp)$/i.test(f))
+          .map((f) => ({ src: `${BACKEND_URL}/uploads/${f}`, name: f }));
+        setGalleryImages([...local, ...uploaded]);
+      })
+      .catch(() => setGalleryImages(local));
+  }, [showImageGallery, expertGalleryIdx]);
+
   // Cargar sliders para la sección hero
   useEffect(() => {
     if (section?.sectionKey !== "hero") return;
@@ -278,10 +302,8 @@ export function SectionEditModal({
 
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
-    if (!editingSection.title.trim())
+    if (!editingSection.title?.trim())
       newErrors.title = "El título es requerido";
-    if (!editingSection.content.trim())
-      newErrors.content = "El contenido es requerido";
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -836,7 +858,7 @@ export function SectionEditModal({
                                 {product.name}
                               </p>
                               <p className="text-xs text-gray-400">
-                                ${product.price.toFixed(2)}
+                                {product.variants?.[0]?.price != null ? `$${product.variants[0].price.toFixed(2)}` : ""}
                               </p>
                             </div>
                             <button
@@ -882,7 +904,7 @@ export function SectionEditModal({
                                     {product.name}
                                   </p>
                                   <p className="text-xs text-gray-400">
-                                    ${product.price.toFixed(2)}
+                                    {product.variants?.[0]?.price != null ? `$${product.variants[0].price.toFixed(2)}` : ""}
                                   </p>
                                 </div>
                                 <button
@@ -2371,6 +2393,8 @@ export function SectionEditModal({
                 updated[idx] = { ...updated[idx], [field]: val };
                 handleChange("content", JSON.stringify(updated));
               };
+              // Keep ref fresh so gallery modal can call it
+              expertUpdateRef.current = updateExpert;
 
               const uploadExpertImage = async (
                 e: React.ChangeEvent<HTMLInputElement>,
@@ -2428,15 +2452,24 @@ export function SectionEditModal({
                             )}
                           </div>
                           <div className="flex flex-col gap-2 flex-1">
-                            <label className="flex items-center gap-2 px-3 py-1.5 text-xs border border-gray-300 rounded-lg hover:bg-gray-50 cursor-pointer w-fit">
-                              <Upload className="w-3 h-3" /> Subir foto
-                              <input
-                                type="file"
-                                accept="image/*"
-                                className="hidden"
-                                onChange={(e) => uploadExpertImage(e, i)}
-                              />
-                            </label>
+                            <div className="flex gap-2 flex-wrap">
+                              <label className="flex items-center gap-1.5 px-3 py-1.5 text-xs border border-gray-300 rounded-lg hover:bg-gray-50 cursor-pointer">
+                                <Upload className="w-3 h-3" /> Subir foto
+                                <input
+                                  type="file"
+                                  accept="image/*"
+                                  className="hidden"
+                                  onChange={(e) => uploadExpertImage(e, i)}
+                                />
+                              </label>
+                              <button
+                                type="button"
+                                onClick={() => setExpertGalleryIdx(i)}
+                                className="flex items-center gap-1.5 px-3 py-1.5 text-xs border border-gray-300 rounded-lg hover:bg-gray-50"
+                              >
+                                <Image className="w-3 h-3" /> Galería
+                              </button>
+                            </div>
                             <input
                               className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded-lg"
                               value={expert.imageUrl}
@@ -2636,7 +2669,7 @@ export function SectionEditModal({
       </div>
 
       {/* Modal de galería de imágenes */}
-      {showImageGallery !== null && (
+      {(showImageGallery !== null || expertGalleryIdx !== null) && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
           <div className="bg-white rounded-lg w-full max-w-4xl max-h-[80vh] overflow-y-auto">
             <div className="flex items-center justify-between p-4 border-b border-gray-200">
@@ -2644,7 +2677,10 @@ export function SectionEditModal({
                 Seleccionar Imagen
               </h3>
               <button
-                onClick={() => setShowImageGallery(null)}
+                onClick={() => {
+                  setShowImageGallery(null);
+                  setExpertGalleryIdx(null);
+                }}
                 className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
               >
                 <X className="w-5 h-5" />
@@ -2653,13 +2689,18 @@ export function SectionEditModal({
 
             <div className="p-4">
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                {availableImages.map((image, index) => (
+                {galleryImages.map((image, index) => (
                   <div
                     key={index}
                     className="group relative cursor-pointer"
-                    onClick={() =>
-                      selectImageFromGallery(showImageGallery!, image.src)
-                    }
+                    onClick={() => {
+                      if (expertGalleryIdx !== null) {
+                        expertUpdateRef.current?.(expertGalleryIdx, "imageUrl", image.src);
+                        setExpertGalleryIdx(null);
+                      } else {
+                        selectImageFromGallery(showImageGallery!, image.src);
+                      }
+                    }}
                   >
                     <img
                       src={image.src}
@@ -2668,7 +2709,7 @@ export function SectionEditModal({
                     />
                     <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors rounded-lg" />
                     <div className="absolute bottom-1 left-1 right-1">
-                      <div className="bg-black/70 text-white text-xs px-2 py-1 rounded backdrop-blur-sm">
+                      <div className="bg-black/70 text-white text-xs px-2 py-1 rounded backdrop-blur-sm truncate">
                         {image.name}
                       </div>
                     </div>
@@ -2676,10 +2717,10 @@ export function SectionEditModal({
                 ))}
               </div>
 
-              {availableImages.length === 0 && (
+              {galleryImages.length === 0 && (
                 <div className="text-center py-8 text-gray-500">
                   <Image className="w-12 h-12 mx-auto mb-2 text-gray-300" />
-                  <p>No hay imágenes disponibles</p>
+                  <p>Cargando imágenes...</p>
                 </div>
               )}
             </div>

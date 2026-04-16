@@ -8,6 +8,10 @@ import { Toaster } from "@/components/ui/sonner";
 import { useLenis } from "./hooks/useLenis";
 import { AdminProvider } from "@/contexts/AdminContext";
 import { HomeDataProvider } from "@/contexts/HomeDataContext";
+import { CartProvider } from "@/contexts/CartContext";
+import { AuthUserProvider } from "@/contexts/AuthUserContext";
+import { CartDrawer } from "@/components/cart/CartDrawer";
+import { AuthDrawer } from "@/components/auth/AuthDrawer";
 
 // Pages
 import Home from "@/pages/Home";
@@ -15,6 +19,12 @@ import Login from "@/pages/admin/Login";
 import About from "./pages/About";
 import Products from "./pages/Products";
 import Categories from "./pages/Categories";
+import Catalog from "./pages/Catalog";
+import ProductDetail from "./pages/ProductDetail";
+import Checkout from "./pages/Checkout";
+import CheckoutSuccess from "./pages/CheckoutSuccess";
+import VerifyEmail from "./pages/auth/VerifyEmail";
+import UserProfile from "./pages/UserProfile";
 
 // Admin pages
 import Dashboard from "@/pages/admin/Dashboard";
@@ -29,8 +39,7 @@ import ProductsEditor from "./pages/admin/ProductsEditor";
 import CategoriesEditor from "./pages/admin/CategoriesEditor";
 import Resources from "./pages/Resources";
 import ResourcesEditor from "./pages/admin/ResourcesEditor";
-
-/* import About from "@/pages/About"; */
+import OrdersManager from "./pages/admin/OrdersManager";
 
 // Components
 import { Navbar } from "@/components/shared/Navbar";
@@ -48,11 +57,12 @@ function AppContent() {
   return (
     <div className="min-h-screen bg-[#EEEEEE] flex flex-col">
       {!isAdminRoute && <Navbar />}
+
       <main
         className={
           isAdminRoute
             ? "w-full"
-            : "home-page w-full overflow-x-hidden min-h-screen pt-20"
+            : "home-page w-full overflow-x-hidden min-h-screen pt-16 lg:pt-20"
         }
       >
         <Routes>
@@ -62,6 +72,12 @@ function AppContent() {
           <Route path="/products" element={<Products />} />
           <Route path="/categories" element={<Categories />} />
           <Route path="/resources" element={<Resources />} />
+          <Route path="/catalogo" element={<Catalog />} />
+          <Route path="/catalogo/:id" element={<ProductDetail />} />
+          <Route path="/checkout" element={<Checkout />} />
+          <Route path="/checkout/success" element={<CheckoutSuccess />} />
+          <Route path="/auth/verify" element={<VerifyEmail />} />
+          <Route path="/perfil" element={<UserProfile />} />
 
           {/* Ruta de Login (sin layout de admin) */}
           <Route path="/admin/login" element={<Login />} />
@@ -87,10 +103,17 @@ function AppContent() {
             <Route path="products-editor" element={<ProductsEditor />} />
             <Route path="categories-editor" element={<CategoriesEditor />} />
             <Route path="resources-editor" element={<ResourcesEditor />} />
+            <Route path="orders" element={<OrdersManager />} />
           </Route>
         </Routes>
       </main>
+
       {!isAdminRoute && <Footer />}
+
+      {/* ── Fixed overlay drawers — rendered outside normal flow ── */}
+      {!isAdminRoute && <AuthDrawer />}
+      {!isAdminRoute && <CartDrawer />}
+
       <Toaster position="top-right" />
     </div>
   );
@@ -101,7 +124,11 @@ function App() {
     <Router>
       <HomeDataProvider>
         <AdminProvider>
-          <AppContent />
+          <AuthUserProvider>
+            <CartProvider>
+              <AppContent />
+            </CartProvider>
+          </AuthUserProvider>
         </AdminProvider>
       </HomeDataProvider>
     </Router>

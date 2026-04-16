@@ -22,12 +22,16 @@
   "description": "",
   "dependencies": {
     "@prisma/client": "5.22.0",
+    "@supabase/supabase-js": "^2.101.0",
     "bcryptjs": "^3.0.3",
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
     "express": "^5.2.1",
+    "express-session": "^1.19.0",
     "jsonwebtoken": "^9.0.3",
     "multer": "^2.0.2",
+    "resend": "^6.11.0",
+    "stripe": "^21.0.1",
     "uuid": "^13.0.0"
   },
   "devDependencies": {
