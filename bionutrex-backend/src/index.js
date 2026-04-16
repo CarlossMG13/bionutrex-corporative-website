@@ -3,13 +3,15 @@ import cors from "cors";
 import session from "express-session";
 import dotenv from "dotenv";
 import multer from "multer";
+import morgan from "morgan";
 
 // Load env before importing lib modules that read process.env
 dotenv.config();
 
 import { uploadFile, deleteFile, BUCKETS } from "./lib/storage.js";
+import logger from "./utils/logger.js";
 
-console.log("📦 Starting BioNutrex Backend...");
+logger.info("📦 Starting BioNutrex Backend...");
 
 // Import routes
 console.log("📥 Importing routes...");
@@ -24,20 +26,20 @@ import cartRoutes from "./routes/cart.js";
 import checkoutRoutes from "./routes/checkout.js";
 import adminOrdersRoutes from "./routes/admin-orders.js";
 import userRoutes from "./routes/users.js";
-console.log("✅ Routes imported successfully");
+logger.info("✅ Routes imported successfully");
 
-console.log("📂 Path setup complete");
+logger.info("📂 Path setup complete");
 
 // Load environment variables
-console.log("✅ Environment variables loaded");
+logger.info("✅ Environment variables loaded");
 
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-console.log(`🔧 Creating Express app on port ${PORT}...`);
+logger.info(`🔧 Creating Express app on port ${PORT}...`);
 
 // Middleware
-console.log("📝 Setting up middleware...");
+logger.info("📝 Setting up middleware...");
 app.use(cors({
   origin: process.env.FRONTEND_URL || "http://localhost:5173",
   credentials: true,
@@ -80,6 +82,9 @@ const upload = multer({
 });
 
 // Los archivos ahora se sirven desde Supabase Storage (no hay carpeta /uploads local)
+
+// Add Morgan for HTTP request logging
+app.use(morgan("dev"));
 
 // Routes
 console.log("🛣️  Registering API routes...");

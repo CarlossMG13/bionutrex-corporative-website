@@ -1,0 +1,209 @@
+{"level":"info","message":"📦 Starting BioNutrex Backend...","timestamp":"2026-04-16T07:19:19.442Z"}
+{"level":"info","message":"✅ Routes imported successfully","timestamp":"2026-04-16T07:19:19.443Z"}
+{"level":"info","message":"📂 Path setup complete","timestamp":"2026-04-16T07:19:19.443Z"}
+{"level":"info","message":"✅ Environment variables loaded","timestamp":"2026-04-16T07:19:19.443Z"}
+{"level":"info","message":"🔧 Creating Express app on port 3001...","timestamp":"2026-04-16T07:19:19.443Z"}
+{"level":"info","message":"📝 Setting up middleware...","timestamp":"2026-04-16T07:19:19.443Z"}
+{"level":"info","message":"📦 Starting BioNutrex Backend...","timestamp":"2026-04-16T07:19:38.866Z"}
+{"level":"info","message":"✅ Routes imported successfully","timestamp":"2026-04-16T07:19:38.867Z"}
+{"level":"info","message":"📂 Path setup complete","timestamp":"2026-04-16T07:19:38.867Z"}
+{"level":"info","message":"✅ Environment variables loaded","timestamp":"2026-04-16T07:19:38.867Z"}
+{"level":"info","message":"🔧 Creating Express app on port 3001...","timestamp":"2026-04-16T07:19:38.867Z"}
+{"level":"info","message":"📝 Setting up middleware...","timestamp":"2026-04-16T07:19:38.868Z"}
+{"level":"info","message":"📦 Starting BioNutrex Backend...","timestamp":"2026-04-16T07:19:39.495Z"}
+{"level":"info","message":"✅ Routes imported successfully","timestamp":"2026-04-16T07:19:39.495Z"}
+{"level":"info","message":"📂 Path setup complete","timestamp":"2026-04-16T07:19:39.495Z"}
+{"level":"info","message":"✅ Environment variables loaded","timestamp":"2026-04-16T07:19:39.496Z"}
+{"level":"info","message":"🔧 Creating Express app on port 3001...","timestamp":"2026-04-16T07:19:39.497Z"}
+{"level":"info","message":"📝 Setting up middleware...","timestamp":"2026-04-16T07:19:39.497Z"}
+{"level":"info","message":"📦 Starting BioNutrex Backend...","timestamp":"2026-04-16T07:19:40.110Z"}
+{"level":"info","message":"✅ Routes imported successfully","timestamp":"2026-04-16T07:19:40.111Z"}
+{"level":"info","message":"📂 Path setup complete","timestamp":"2026-04-16T07:19:40.111Z"}
+{"level":"info","message":"✅ Environment variables loaded","timestamp":"2026-04-16T07:19:40.111Z"}
+{"level":"info","message":"🔧 Creating Express app on port 3001...","timestamp":"2026-04-16T07:19:40.111Z"}
+{"level":"info","message":"📝 Setting up middleware...","timestamp":"2026-04-16T07:19:40.112Z"}
+{"level":"info","message":"📦 Starting BioNutrex Backend...","timestamp":"2026-04-16T07:19:46.319Z"}
+{"level":"info","message":"✅ Routes imported successfully","timestamp":"2026-04-16T07:19:46.319Z"}
+{"level":"info","message":"📂 Path setup complete","timestamp":"2026-04-16T07:19:46.320Z"}
+{"level":"info","message":"✅ Environment variables loaded","timestamp":"2026-04-16T07:19:46.320Z"}
+{"level":"info","message":"🔧 Creating Express app on port 3001...","timestamp":"2026-04-16T07:19:46.320Z"}
+{"level":"info","message":"📝 Setting up middleware...","timestamp":"2026-04-16T07:19:46.320Z"}
+{"level":"info","message":"📦 Starting BioNutrex Backend...","timestamp":"2026-04-16T07:29:23.234Z"}
+{"level":"info","message":"✅ Routes imported successfully","timestamp":"2026-04-16T07:29:23.235Z"}
+{"level":"info","message":"📂 Path setup complete","timestamp":"2026-04-16T07:29:23.235Z"}
+{"level":"info","message":"✅ Environment variables loaded","timestamp":"2026-04-16T07:29:23.235Z"}
+{"level":"info","message":"🔧 Creating Express app on port 3001...","timestamp":"2026-04-16T07:29:23.236Z"}
+{"level":"info","message":"📝 Setting up middleware...","timestamp":"2026-04-16T07:29:23.236Z"}
+{"level":"info","message":"📦 Starting BioNutrex Backend...","timestamp":"2026-04-16T07:29:23.258Z"}
+{"level":"info","message":"✅ Routes imported successfully","timestamp":"2026-04-16T07:29:23.259Z"}
+{"level":"info","message":"📂 Path setup complete","timestamp":"2026-04-16T07:29:23.260Z"}
+{"level":"info","message":"✅ Environment variables loaded","timestamp":"2026-04-16T07:29:23.260Z"}
+{"level":"info","message":"🔧 Creating Express app on port 3001...","timestamp":"2026-04-16T07:29:23.260Z"}
+{"level":"info","message":"📝 Setting up middleware...","timestamp":"2026-04-16T07:29:23.260Z"}
+{"level":"info","message":"📦 Starting BioNutrex Backend...","timestamp":"2026-04-16T07:29:27.775Z"}
+{"level":"info","message":"✅ Routes imported successfully","timestamp":"2026-04-16T07:29:27.776Z"}
+{"level":"info","message":"📂 Path setup complete","timestamp":"2026-04-16T07:29:27.776Z"}
+{"level":"info","message":"✅ Environment variables loaded","timestamp":"2026-04-16T07:29:27.776Z"}
+{"level":"info","message":"🔧 Creating Express app on port 3001...","timestamp":"2026-04-16T07:29:27.777Z"}
+{"level":"info","message":"📝 Setting up middleware...","timestamp":"2026-04-16T07:29:27.777Z"}
+{"level":"info","message":"📦 Starting BioNutrex Backend...","timestamp":"2026-04-16T07:29:27.801Z"}
+{"level":"info","message":"✅ Routes imported successfully","timestamp":"2026-04-16T07:29:27.802Z"}
+{"level":"info","message":"📂 Path setup complete","timestamp":"2026-04-16T07:29:27.802Z"}
+{"level":"info","message":"✅ Environment variables loaded","timestamp":"2026-04-16T07:29:27.802Z"}
+{"level":"info","message":"🔧 Creating Express app on port 3001...","timestamp":"2026-04-16T07:29:27.802Z"}
+{"level":"info","message":"📝 Setting up middleware...","timestamp":"2026-04-16T07:29:27.802Z"}
+{"level":"info","message":"📦 Starting BioNutrex Backend...","timestamp":"2026-04-16T07:30:18.843Z"}
+{"level":"info","message":"✅ Routes imported successfully","timestamp":"2026-04-16T07:30:18.844Z"}
+{"level":"info","message":"📂 Path setup complete","timestamp":"2026-04-16T07:30:18.844Z"}
+{"level":"info","message":"✅ Environment variables loaded","timestamp":"2026-04-16T07:30:18.844Z"}
+{"level":"info","message":"🔧 Creating Express app on port 3001...","timestamp":"2026-04-16T07:30:18.844Z"}
+{"level":"info","message":"📝 Setting up middleware...","timestamp":"2026-04-16T07:30:18.844Z"}
+{"level":"info","message":"📦 Starting BioNutrex Backend...","timestamp":"2026-04-16T07:30:18.860Z"}
+{"level":"info","message":"✅ Routes imported successfully","timestamp":"2026-04-16T07:30:18.860Z"}
+{"level":"info","message":"📂 Path setup complete","timestamp":"2026-04-16T07:30:18.861Z"}
+{"level":"info","message":"✅ Environment variables loaded","timestamp":"2026-04-16T07:30:18.861Z"}
+{"level":"info","message":"🔧 Creating Express app on port 3001...","timestamp":"2026-04-16T07:30:18.861Z"}
+{"level":"info","message":"📝 Setting up middleware...","timestamp":"2026-04-16T07:30:18.861Z"}
+{"level":"info","message":"📦 Starting BioNutrex Backend...","timestamp":"2026-04-16T07:30:36.963Z"}
+{"level":"info","message":"✅ Routes imported successfully","timestamp":"2026-04-16T07:30:36.964Z"}
+{"level":"info","message":"📂 Path setup complete","timestamp":"2026-04-16T07:30:36.964Z"}
+{"level":"info","message":"✅ Environment variables loaded","timestamp":"2026-04-16T07:30:36.964Z"}
+{"level":"info","message":"🔧 Creating Express app on port 3001...","timestamp":"2026-04-16T07:30:36.965Z"}
+{"level":"info","message":"📝 Setting up middleware...","timestamp":"2026-04-16T07:30:36.965Z"}
+{"level":"info","message":"📦 Starting BioNutrex Backend...","timestamp":"2026-04-16T07:30:36.988Z"}
+{"level":"info","message":"✅ Routes imported successfully","timestamp":"2026-04-16T07:30:36.989Z"}
+{"level":"info","message":"📂 Path setup complete","timestamp":"2026-04-16T07:30:36.989Z"}
+{"level":"info","message":"✅ Environment variables loaded","timestamp":"2026-04-16T07:30:36.989Z"}
+{"level":"info","message":"🔧 Creating Express app on port 3001...","timestamp":"2026-04-16T07:30:36.989Z"}
+{"level":"info","message":"📝 Setting up middleware...","timestamp":"2026-04-16T07:30:36.989Z"}
+{"level":"info","message":"[email] Resend client initialized","timestamp":"2026-04-16T07:33:14.345Z"}
+{"level":"info","message":"📦 Starting BioNutrex Backend...","timestamp":"2026-04-16T07:33:14.350Z"}
+{"level":"info","message":"✅ Routes imported successfully","timestamp":"2026-04-16T07:33:14.350Z"}
+{"level":"info","message":"📂 Path setup complete","timestamp":"2026-04-16T07:33:14.350Z"}
+{"level":"info","message":"✅ Environment variables loaded","timestamp":"2026-04-16T07:33:14.350Z"}
+{"level":"info","message":"🔧 Creating Express app on port 3001...","timestamp":"2026-04-16T07:33:14.351Z"}
+{"level":"info","message":"📝 Setting up middleware...","timestamp":"2026-04-16T07:33:14.351Z"}
+{"level":"info","message":"[email] Resend client initialized","timestamp":"2026-04-16T07:33:14.361Z"}
+{"level":"info","message":"📦 Starting BioNutrex Backend...","timestamp":"2026-04-16T07:33:14.364Z"}
+{"level":"info","message":"✅ Routes imported successfully","timestamp":"2026-04-16T07:33:14.365Z"}
+{"level":"info","message":"📂 Path setup complete","timestamp":"2026-04-16T07:33:14.365Z"}
+{"level":"info","message":"✅ Environment variables loaded","timestamp":"2026-04-16T07:33:14.365Z"}
+{"level":"info","message":"🔧 Creating Express app on port 3001...","timestamp":"2026-04-16T07:33:14.365Z"}
+{"level":"info","message":"📝 Setting up middleware...","timestamp":"2026-04-16T07:33:14.365Z"}
+{"level":"info","message":"[email] Resend client initialized","timestamp":"2026-04-16T07:33:43.477Z"}
+{"level":"info","message":"📦 Starting BioNutrex Backend...","timestamp":"2026-04-16T07:33:43.481Z"}
+{"level":"info","message":"✅ Routes imported successfully","timestamp":"2026-04-16T07:33:43.481Z"}
+{"level":"info","message":"📂 Path setup complete","timestamp":"2026-04-16T07:33:43.481Z"}
+{"level":"info","message":"✅ Environment variables loaded","timestamp":"2026-04-16T07:33:43.481Z"}
+{"level":"info","message":"🔧 Creating Express app on port 3001...","timestamp":"2026-04-16T07:33:43.481Z"}
+{"level":"info","message":"📝 Setting up middleware...","timestamp":"2026-04-16T07:33:43.481Z"}
+{"level":"info","message":"[email] Resend client initialized","timestamp":"2026-04-16T07:33:43.497Z"}
+{"level":"info","message":"📦 Starting BioNutrex Backend...","timestamp":"2026-04-16T07:33:43.501Z"}
+{"level":"info","message":"✅ Routes imported successfully","timestamp":"2026-04-16T07:33:43.501Z"}
+{"level":"info","message":"📂 Path setup complete","timestamp":"2026-04-16T07:33:43.501Z"}
+{"level":"info","message":"✅ Environment variables loaded","timestamp":"2026-04-16T07:33:43.501Z"}
+{"level":"info","message":"🔧 Creating Express app on port 3001...","timestamp":"2026-04-16T07:33:43.502Z"}
+{"level":"info","message":"📝 Setting up middleware...","timestamp":"2026-04-16T07:33:43.502Z"}
+{"level":"info","message":"[email] Resend client initialized","timestamp":"2026-04-16T07:33:49.253Z"}
+{"level":"info","message":"📦 Starting BioNutrex Backend...","timestamp":"2026-04-16T07:33:49.256Z"}
+{"level":"info","message":"✅ Routes imported successfully","timestamp":"2026-04-16T07:33:49.256Z"}
+{"level":"info","message":"📂 Path setup complete","timestamp":"2026-04-16T07:33:49.256Z"}
+{"level":"info","message":"✅ Environment variables loaded","timestamp":"2026-04-16T07:33:49.256Z"}
+{"level":"info","message":"🔧 Creating Express app on port 3001...","timestamp":"2026-04-16T07:33:49.257Z"}
+{"level":"info","message":"📝 Setting up middleware...","timestamp":"2026-04-16T07:33:49.257Z"}
+{"level":"info","message":"[email] Resend client initialized","timestamp":"2026-04-16T07:33:49.271Z"}
+{"level":"info","message":"📦 Starting BioNutrex Backend...","timestamp":"2026-04-16T07:33:49.275Z"}
+{"level":"info","message":"✅ Routes imported successfully","timestamp":"2026-04-16T07:33:49.275Z"}
+{"level":"info","message":"📂 Path setup complete","timestamp":"2026-04-16T07:33:49.275Z"}
+{"level":"info","message":"✅ Environment variables loaded","timestamp":"2026-04-16T07:33:49.275Z"}
+{"level":"info","message":"🔧 Creating Express app on port 3001...","timestamp":"2026-04-16T07:33:49.275Z"}
+{"level":"info","message":"📝 Setting up middleware...","timestamp":"2026-04-16T07:33:49.275Z"}
+{"level":"info","message":"[email] Resend client initialized","timestamp":"2026-04-16T07:34:09.924Z"}
+{"level":"info","message":"📦 Starting BioNutrex Backend...","timestamp":"2026-04-16T07:34:09.928Z"}
+{"level":"info","message":"✅ Routes imported successfully","timestamp":"2026-04-16T07:34:09.928Z"}
+{"level":"info","message":"📂 Path setup complete","timestamp":"2026-04-16T07:34:09.929Z"}
+{"level":"info","message":"✅ Environment variables loaded","timestamp":"2026-04-16T07:34:09.929Z"}
+{"level":"info","message":"🔧 Creating Express app on port 3001...","timestamp":"2026-04-16T07:34:09.929Z"}
+{"level":"info","message":"📝 Setting up middleware...","timestamp":"2026-04-16T07:34:09.929Z"}
+{"level":"info","message":"[email] Resend client initialized","timestamp":"2026-04-16T07:34:09.948Z"}
+{"level":"info","message":"📦 Starting BioNutrex Backend...","timestamp":"2026-04-16T07:34:09.953Z"}
+{"level":"info","message":"✅ Routes imported successfully","timestamp":"2026-04-16T07:34:09.953Z"}
+{"level":"info","message":"📂 Path setup complete","timestamp":"2026-04-16T07:34:09.953Z"}
+{"level":"info","message":"✅ Environment variables loaded","timestamp":"2026-04-16T07:34:09.953Z"}
+{"level":"info","message":"🔧 Creating Express app on port 3001...","timestamp":"2026-04-16T07:34:09.954Z"}
+{"level":"info","message":"📝 Setting up middleware...","timestamp":"2026-04-16T07:34:09.954Z"}
+{"level":"info","message":"[email] Resend client initialized","timestamp":"2026-04-16T07:34:10.790Z"}
+{"level":"info","message":"📦 Starting BioNutrex Backend...","timestamp":"2026-04-16T07:34:10.794Z"}
+{"level":"info","message":"✅ Routes imported successfully","timestamp":"2026-04-16T07:34:10.794Z"}
+{"level":"info","message":"📂 Path setup complete","timestamp":"2026-04-16T07:34:10.794Z"}
+{"level":"info","message":"✅ Environment variables loaded","timestamp":"2026-04-16T07:34:10.794Z"}
+{"level":"info","message":"🔧 Creating Express app on port 3001...","timestamp":"2026-04-16T07:34:10.795Z"}
+{"level":"info","message":"📝 Setting up middleware...","timestamp":"2026-04-16T07:34:10.795Z"}
+{"level":"info","message":"[email] Resend client initialized","timestamp":"2026-04-16T07:34:10.805Z"}
+{"level":"info","message":"📦 Starting BioNutrex Backend...","timestamp":"2026-04-16T07:34:10.809Z"}
+{"level":"info","message":"✅ Routes imported successfully","timestamp":"2026-04-16T07:34:10.809Z"}
+{"level":"info","message":"📂 Path setup complete","timestamp":"2026-04-16T07:34:10.809Z"}
+{"level":"info","message":"✅ Environment variables loaded","timestamp":"2026-04-16T07:34:10.809Z"}
+{"level":"info","message":"🔧 Creating Express app on port 3001...","timestamp":"2026-04-16T07:34:10.810Z"}
+{"level":"info","message":"📝 Setting up middleware...","timestamp":"2026-04-16T07:34:10.810Z"}
+{"level":"info","message":"[email] Resend client initialized","timestamp":"2026-04-16T07:35:19.693Z"}
+{"level":"info","message":"📦 Starting BioNutrex Backend...","timestamp":"2026-04-16T07:35:19.697Z"}
+{"level":"info","message":"✅ Routes imported successfully","timestamp":"2026-04-16T07:35:19.697Z"}
+{"level":"info","message":"📂 Path setup complete","timestamp":"2026-04-16T07:35:19.697Z"}
+{"level":"info","message":"✅ Environment variables loaded","timestamp":"2026-04-16T07:35:19.697Z"}
+{"level":"info","message":"🔧 Creating Express app on port 3001...","timestamp":"2026-04-16T07:35:19.698Z"}
+{"level":"info","message":"📝 Setting up middleware...","timestamp":"2026-04-16T07:35:19.698Z"}
+{"level":"info","message":"[checkout] Triggering order confirmation email for order 9 to andres.trujillo1602@gmail.com","timestamp":"2026-04-16T07:43:56.796Z"}
+{"level":"info","message":"[email] sendOrderConfirmationEmail sending to andres.trujillo1602@gmail.com for order 9","timestamp":"2026-04-16T07:43:56.796Z"}
+{"level":"warn","message":"[email] sendOrderConfirmationEmail returned error: API key is invalid","timestamp":"2026-04-16T07:43:57.234Z"}
+{"level":"info","message":"[email] Resend client initialized","timestamp":"2026-04-16T07:45:04.873Z"}
+{"level":"info","message":"📦 Starting BioNutrex Backend...","timestamp":"2026-04-16T07:45:04.877Z"}
+{"level":"info","message":"✅ Routes imported successfully","timestamp":"2026-04-16T07:45:04.878Z"}
+{"level":"info","message":"📂 Path setup complete","timestamp":"2026-04-16T07:45:04.878Z"}
+{"level":"info","message":"✅ Environment variables loaded","timestamp":"2026-04-16T07:45:04.878Z"}
+{"level":"info","message":"🔧 Creating Express app on port 3001...","timestamp":"2026-04-16T07:45:04.878Z"}
+{"level":"info","message":"📝 Setting up middleware...","timestamp":"2026-04-16T07:45:04.878Z"}
+{"level":"info","message":"[checkout] Triggering order confirmation email for order 10 to andres.trujillo1602@gmail.com","timestamp":"2026-04-16T07:45:36.784Z"}
+{"level":"info","message":"[email] sendOrderConfirmationEmail sending to andres.trujillo1602@gmail.com for order 10","timestamp":"2026-04-16T07:45:36.785Z"}
+{"level":"warn","message":"[email] sendOrderConfirmationEmail returned error: You can only send testing emails to your own email address (adm.bionutrexmx@gmail.com). To send emails to other recipients, please verify a domain at resend.com/domains, and change the `from` address to an email using this domain.","timestamp":"2026-04-16T07:45:37.330Z"}
+{"level":"info","message":"[checkout] Triggering order confirmation email for order 11 to adm.bionutrexmx@gmail.com","timestamp":"2026-04-16T07:58:26.335Z"}
+{"level":"info","message":"[email] sendOrderConfirmationEmail sending to adm.bionutrexmx@gmail.com for order 11","timestamp":"2026-04-16T07:58:26.336Z"}
+{"id":"77a647b3-af07-413d-95c6-98687eb58cb2","level":"info","message":"[email] sendOrderConfirmationEmail success","timestamp":"2026-04-16T07:58:26.695Z"}
+{"level":"info","message":"[email] Resend client initialized","timestamp":"2026-04-16T08:02:06.283Z"}
+{"level":"info","message":"📦 Starting BioNutrex Backend...","timestamp":"2026-04-16T08:02:06.286Z"}
+{"level":"info","message":"✅ Routes imported successfully","timestamp":"2026-04-16T08:02:06.286Z"}
+{"level":"info","message":"📂 Path setup complete","timestamp":"2026-04-16T08:02:06.286Z"}
+{"level":"info","message":"✅ Environment variables loaded","timestamp":"2026-04-16T08:02:06.286Z"}
+{"level":"info","message":"🔧 Creating Express app on port 3001...","timestamp":"2026-04-16T08:02:06.287Z"}
+{"level":"info","message":"📝 Setting up middleware...","timestamp":"2026-04-16T08:02:06.287Z"}
+{"level":"info","message":"[email] Resend client initialized","timestamp":"2026-04-16T08:03:13.674Z"}
+{"level":"info","message":"[email] sendWelcomeEmail sending to adm.bionutrexmx@gmail.com","timestamp":"2026-04-16T08:03:13.675Z"}
+{"id":"32a58f42-2eb6-4238-bb44-ade9bfe10147","level":"info","message":"[email] sendWelcomeEmail success","timestamp":"2026-04-16T08:03:14.384Z"}
+{"level":"info","message":"[email] Resend client initialized","timestamp":"2026-04-16T08:06:59.174Z"}
+{"level":"info","message":"📦 Starting BioNutrex Backend...","timestamp":"2026-04-16T08:06:59.179Z"}
+{"level":"info","message":"✅ Routes imported successfully","timestamp":"2026-04-16T08:06:59.179Z"}
+{"level":"info","message":"📂 Path setup complete","timestamp":"2026-04-16T08:06:59.179Z"}
+{"level":"info","message":"✅ Environment variables loaded","timestamp":"2026-04-16T08:06:59.179Z"}
+{"level":"info","message":"🔧 Creating Express app on port 3001...","timestamp":"2026-04-16T08:06:59.180Z"}
+{"level":"info","message":"📝 Setting up middleware...","timestamp":"2026-04-16T08:06:59.180Z"}
+{"level":"info","message":"[email] Resend client initialized","timestamp":"2026-04-16T08:06:59.188Z"}
+{"level":"info","message":"📦 Starting BioNutrex Backend...","timestamp":"2026-04-16T08:06:59.193Z"}
+{"level":"info","message":"✅ Routes imported successfully","timestamp":"2026-04-16T08:06:59.193Z"}
+{"level":"info","message":"📂 Path setup complete","timestamp":"2026-04-16T08:06:59.193Z"}
+{"level":"info","message":"✅ Environment variables loaded","timestamp":"2026-04-16T08:06:59.193Z"}
+{"level":"info","message":"🔧 Creating Express app on port 3001...","timestamp":"2026-04-16T08:06:59.194Z"}
+{"level":"info","message":"📝 Setting up middleware...","timestamp":"2026-04-16T08:06:59.194Z"}
+{"level":"info","message":"[email] Resend client initialized","timestamp":"2026-04-16T08:08:01.215Z"}
+{"level":"info","message":"📦 Starting BioNutrex Backend...","timestamp":"2026-04-16T08:08:01.221Z"}
+{"level":"info","message":"✅ Routes imported successfully","timestamp":"2026-04-16T08:08:01.221Z"}
+{"level":"info","message":"📂 Path setup complete","timestamp":"2026-04-16T08:08:01.221Z"}
+{"level":"info","message":"✅ Environment variables loaded","timestamp":"2026-04-16T08:08:01.221Z"}
+{"level":"info","message":"🔧 Creating Express app on port 3001...","timestamp":"2026-04-16T08:08:01.222Z"}
+{"level":"info","message":"📝 Setting up middleware...","timestamp":"2026-04-16T08:08:01.222Z"}
+{"level":"info","message":"[email] Resend client initialized","timestamp":"2026-04-16T08:08:01.230Z"}
+{"level":"info","message":"📦 Starting BioNutrex Backend...","timestamp":"2026-04-16T08:08:01.235Z"}
+{"level":"info","message":"✅ Routes imported successfully","timestamp":"2026-04-16T08:08:01.235Z"}
+{"level":"info","message":"📂 Path setup complete","timestamp":"2026-04-16T08:08:01.235Z"}
+{"level":"info","message":"✅ Environment variables loaded","timestamp":"2026-04-16T08:08:01.236Z"}
+{"level":"info","message":"🔧 Creating Express app on port 3001...","timestamp":"2026-04-16T08:08:01.236Z"}
+{"level":"info","message":"📝 Setting up middleware...","timestamp":"2026-04-16T08:08:01.236Z"}

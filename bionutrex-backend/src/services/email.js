@@ -1,8 +1,12 @@
 import { Resend } from "resend";
 
+import logger from "../utils/logger.js";
+
 const resend = process.env.RESEND_API_KEY
   ? new Resend(process.env.RESEND_API_KEY)
   : null;
+
+logger.info(`[email] Resend client ${resend ? "initialized" : "not initialized (RESEND_API_KEY missing)"}`);
 
 // En desarrollo usa onboarding@resend.dev (no requiere dominio verificado).
 // En producción cambia a tu dominio verificado: "Bionutrex <noreply@tudominio.com>"
@@ -13,10 +17,21 @@ const FROM =
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
-function safe(fn, label) {
-  return fn().catch((err) => {
-    console.warn(`[email] ${label} failed (non-blocking):`, err.message);
-  });
+async function safe(fn, label) {
+  try {
+    const result = await fn();
+    // Resend client returns `{ data, error }` instead of throwing on API errors
+    if (result && result.error) {
+      logger.warn(`[email] ${label} returned error: ${result.error?.message || JSON.stringify(result.error)}`);
+      logger.debug(result.error);
+    } else {
+      logger.info(`[email] ${label} success`, { id: result?.data?.id });
+    }
+    return result;
+  } catch (err) {
+    logger.error(`[email] ${label} failed (non-blocking): ${err.message}`);
+    logger.debug(err.stack);
+  }
 }
 
 // ─── Templates ──────────────────────────────────────────────────────────────
@@ -158,12 +173,23 @@ function orderConfirmationHtml(order) {
 // ─── Exports ─────────────────────────────────────────────────────────────────
 
 export async function sendWelcomeEmail(email, name) {
-  if (!resend) return;
+  if (!resend) {
+    logger.warn("[email] sendWelcomeEmail skipped: RESEND client not initialized");
+    return;
+  }
+
+  const to = (email || "").toString().trim();
+  if (!to) {
+    logger.warn("[email] sendWelcomeEmail skipped: missing recipient email");
+    return;
+  }
+
+  logger.info(`[email] sendWelcomeEmail sending to ${to}`);
   return safe(
     () =>
       resend.emails.send({
         from: FROM,
-        to: email,
+        to,
         subject: "Bienvenido a Bionutrex ⚡",
         html: welcomeHtml(name),
       }),
@@ -172,10 +198,18 @@ export async function sendWelcomeEmail(email, name) {
 }
 
 export async function sendOrderConfirmationEmail(order) {
-  if (!resend) return;
-  const recipientEmail = order.email;
-  if (!recipientEmail) return;
+  if (!resend) {
+    logger.warn("[email] sendOrderConfirmationEmail skipped: RESEND client not initialized");
+    return;
+  }
 
+  const recipientEmail = (order?.email || "").toString().trim();
+  if (!recipientEmail) {
+    logger.warn(`[email] sendOrderConfirmationEmail skipped: no recipient email for order ${order?.id}`);
+    return;
+  }
+
+  logger.info(`[email] sendOrderConfirmationEmail sending to ${recipientEmail} for order ${order?.id}`);
   return safe(
     () =>
       resend.emails.send({
