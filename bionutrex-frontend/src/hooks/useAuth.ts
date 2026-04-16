@@ -29,31 +29,35 @@ export function useAuth() {
         if (isAdmin) {
           setIsAuthenticated(true);
           setAdmin({ id: session.user.id, email: session.user.email!, name: session.user.email! });
+        } else {
+          // Sesión activa pero NO es admin (cuenta de cliente) — denegar acceso
+          setIsAuthenticated(false);
+          setAdmin(null);
         }
-        // Si no es admin, simplemente no autenticamos — el formulario de login se muestra
       }
       setLoading(false);
     });
 
     // Escuchar cambios de sesión
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (event === "SIGNED_IN" && session) {
-        const isAdmin = await verifyAdminRole(session.access_token);
-        if (isAdmin) {
-          setIsAuthenticated(true);
-          setAdmin({ id: session.user.id, email: session.user.email!, name: session.user.email! });
-        } else {
-          // No es admin — limpiar estado pero no cerrar sesión (puede ser sesión de cliente)
-          setIsAuthenticated(false);
-          setAdmin(null);
-        }
-      } else if (event === "SIGNED_OUT" || !session) {
+      if (event === "SIGNED_OUT" || !session) {
         setIsAuthenticated(false);
         setAdmin(null);
-      } else if (session) {
-        // TOKEN_REFRESHED / USER_UPDATED — mantener estado actual
+        return;
+      }
+
+      // Para CUALQUIER evento con sesión activa (INITIAL_SESSION, SIGNED_IN,
+      // TOKEN_REFRESHED, USER_UPDATED) — siempre verificar el rol en el backend.
+      // Nunca asumir que una sesión Supabase válida implica permisos de admin.
+      const isAdmin = await verifyAdminRole(session.access_token);
+      if (isAdmin) {
         setIsAuthenticated(true);
         setAdmin({ id: session.user.id, email: session.user.email!, name: session.user.email! });
+      } else {
+        // Sesión válida pero sin privilegios de admin (puede ser sesión de cliente)
+        // No cerrar sesión — solo denegar acceso al panel
+        setIsAuthenticated(false);
+        setAdmin(null);
       }
     });
 

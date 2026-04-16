@@ -1,5 +1,12 @@
 import { useLocation, Link } from "react-router-dom";
-import { CheckCircle, Zap, Package, ArrowRight } from "lucide-react";
+import { CheckCircle, Package, ArrowRight } from "lucide-react";
+
+// IVA helpers — el precio YA incluye IVA, se desglosa (no se suma)
+function extractIVA(totalWithIVA: number) {
+  const base = totalWithIVA / 1.16;
+  const iva  = totalWithIVA - base;
+  return { base, iva };
+}
 
 export default function CheckoutSuccess() {
   const location = useLocation();
@@ -11,23 +18,15 @@ export default function CheckoutSuccess() {
       cartTotal: number;
     }) ?? {};
 
-  const orderId = paymentIntentId?.slice(-8).toUpperCase() ?? "——";
+  const orderId    = paymentIntentId?.slice(-8).toUpperCase() ?? "——";
   const grandTotal = cartTotal ?? 0;
+  const { base, iva } = extractIVA(grandTotal);
 
   return (
-    <div className="min-h-screen bg-[#f4f4f4] flex flex-col" style={{ fontFamily: "'Raleway', sans-serif" }}>
-      {/* Top bar */}
-      <header className="bg-white border-b border-gray-100 px-6 py-4">
-        <div className="max-w-6xl mx-auto">
-          <Link to="/" className="flex items-center gap-1.5">
-            <Zap className="w-6 h-6 text-[#00e5ff] fill-[#00e5ff]" />
-            <span className="text-xl font-black tracking-tighter uppercase italic text-black">
-              Bionutrex
-            </span>
-          </Link>
-        </div>
-      </header>
-
+    <div
+      className="min-h-screen bg-[#f4f4f4] flex flex-col pt-16 lg:pt-20"
+      style={{ fontFamily: "'Raleway', sans-serif" }}
+    >
       <div className="flex-1 flex items-center justify-center px-4 py-12">
         <div className="w-full max-w-xl">
           {/* Success card */}
@@ -72,9 +71,21 @@ export default function CheckoutSuccess() {
                     </p>
                   </div>
                 ))}
-                <div className="border-t border-gray-100 pt-3 flex justify-between font-black text-gray-900">
-                  <span>Total pagado</span>
-                  <span className="text-[#0d40a5]">${grandTotal.toFixed(2)}</span>
+
+                {/* IVA breakdown */}
+                <div className="border-t border-gray-100 pt-3 space-y-1.5">
+                  <div className="flex justify-between text-sm text-gray-500">
+                    <span>Subtotal (sin IVA)</span>
+                    <span>${base.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between text-sm text-gray-500">
+                    <span>IVA (16%)</span>
+                    <span>${iva.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between font-black text-gray-900 pt-1 border-t border-gray-100">
+                    <span>Total</span>
+                    <span className="text-[#0d40a5]">${grandTotal.toFixed(2)} MXN</span>
+                  </div>
                 </div>
               </div>
             )}
