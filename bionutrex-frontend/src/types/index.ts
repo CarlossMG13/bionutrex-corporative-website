@@ -136,6 +136,18 @@ export interface CustomerUser {
   _count?: { orders: number };
 }
 
+export interface UserAddress {
+  id: number;
+  userId: number;
+  label: string;
+  address: string;
+  city: string;
+  state: string;
+  zip: string;
+  isDefault: boolean;
+  createdAt: string;
+}
+
 export interface OrderItem {
   id: number;
   productId: string;

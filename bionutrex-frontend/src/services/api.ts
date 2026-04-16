@@ -7,6 +7,7 @@ import type {
   Product,
   TechnicalResource,
   CustomerUser,
+  UserAddress,
 } from "@/types";
 import { supabase } from "@/lib/supabase";
 
@@ -175,6 +176,16 @@ export const userAPI = {
 
   /** Pedidos del cliente */
   getMyOrders: () => api.get("/users/me/orders"),
+
+  /** Direcciones guardadas */
+  getAddresses: () => api.get<UserAddress[]>("/users/me/addresses"),
+  createAddress: (data: Omit<UserAddress, "id" | "userId" | "createdAt">) =>
+    api.post<UserAddress>("/users/me/addresses", data),
+  updateAddress: (id: number, data: Partial<Omit<UserAddress, "id" | "userId" | "createdAt">>) =>
+    api.put<UserAddress>(`/users/me/addresses/${id}`, data),
+  deleteAddress: (id: number) => api.delete(`/users/me/addresses/${id}`),
+  setDefaultAddress: (id: number) =>
+    api.patch<UserAddress>(`/users/me/addresses/${id}/default`),
 };
 
 export default api;

@@ -158,21 +158,38 @@ model Category {
 }
 
 model User {
-  id            Int       @id @default(autoincrement())
-  email         String    @unique
-  password      String?   // Nullable — auth real via Supabase Auth
+  id            Int           @id @default(autoincrement())
+  email         String        @unique
+  password      String?       // Nullable — auth real via Supabase Auth
   name          String?
   phone         String?
   image         String?
   emailVerified DateTime?
 
   orders        Order[]
-  cart          Cart?     // Relación 1:1 con Cart
+  cart          Cart?         // Relación 1:1 con Cart
+  addresses     UserAddress[] // Máximo 3 — validado en la aplicación
 
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
 
   @@map("users")
+}
+
+model UserAddress {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  label     String   @default("Casa")
+  address   String   @db.VarChar(255)
+  city      String   @db.VarChar(100)
+  state     String   @db.VarChar(100)
+  zip       String   @db.VarChar(20)
+  isDefault Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("user_addresses")
 }
 
 model Order {

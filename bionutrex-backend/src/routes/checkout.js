@@ -93,8 +93,17 @@ router.post("/confirm", async (req, res) => {
     const meta = paymentIntent.metadata;
     const items = JSON.parse(meta.items || "[]");
 
+    // Buscar el usuario por email para linkear la orden (aunque no esté autenticado)
+    const userByEmail = meta.email
+      ? await prisma.user.findUnique({
+          where: { email: meta.email },
+          select: { id: true },
+        })
+      : null;
+
     const order = await prisma.order.create({
       data: {
+        ...(userByEmail && { userId: userByEmail.id }),
         fullName: meta.fullName || "Sin nombre",
         email: meta.email || "",
         phone: meta.phone || null,
