@@ -207,3 +207,44 @@
 {"level":"info","message":"✅ Environment variables loaded","timestamp":"2026-04-16T08:08:01.236Z"}
 {"level":"info","message":"🔧 Creating Express app on port 3001...","timestamp":"2026-04-16T08:08:01.236Z"}
 {"level":"info","message":"📝 Setting up middleware...","timestamp":"2026-04-16T08:08:01.236Z"}
+{"level":"info","message":"[email] Resend client initialized","timestamp":"2026-04-18T17:18:21.426Z"}
+{"level":"info","message":"📦 Starting BioNutrex Backend...","timestamp":"2026-04-18T17:18:21.445Z"}
+{"level":"info","message":"✅ Routes imported successfully","timestamp":"2026-04-18T17:18:21.446Z"}
+{"level":"info","message":"📂 Path setup complete","timestamp":"2026-04-18T17:18:21.447Z"}
+{"level":"info","message":"✅ Environment variables loaded","timestamp":"2026-04-18T17:18:21.448Z"}
+{"level":"info","message":"🔧 Creating Express app on port 3001...","timestamp":"2026-04-18T17:18:21.450Z"}
+{"level":"info","message":"📝 Setting up middleware...","timestamp":"2026-04-18T17:18:21.456Z"}
+{"level":"info","message":"[checkout] Triggering order confirmation email for order 13 to adm.bionutrexmx@gmail.com","timestamp":"2026-04-18T17:22:40.299Z"}
+{"level":"info","message":"[email] sendOrderConfirmationEmail sending to adm.bionutrexmx@gmail.com for order 13","timestamp":"2026-04-18T17:22:40.300Z"}
+{"id":"cc256582-a1fe-40d9-817a-b3dd03de6659","level":"info","message":"[email] sendOrderConfirmationEmail success","timestamp":"2026-04-18T17:22:40.936Z"}
+{"level":"info","message":"[email] Resend client initialized","timestamp":"2026-04-18T18:01:34.967Z"}
+{"level":"info","message":"📦 Starting BioNutrex Backend...","timestamp":"2026-04-18T18:01:34.979Z"}
+{"level":"info","message":"✅ Routes imported successfully","timestamp":"2026-04-18T18:01:34.980Z"}
+{"level":"info","message":"📂 Path setup complete","timestamp":"2026-04-18T18:01:34.981Z"}
+{"level":"info","message":"✅ Environment variables loaded","timestamp":"2026-04-18T18:01:34.981Z"}
+{"level":"info","message":"🔧 Creating Express app on port 3001...","timestamp":"2026-04-18T18:01:34.982Z"}
+{"level":"info","message":"📝 Setting up middleware...","timestamp":"2026-04-18T18:01:34.982Z"}
+{"level":"info","message":"[email] Resend client initialized","timestamp":"2026-04-18T18:57:52.464Z"}
+{"level":"info","message":"📦 Starting BioNutrex Backend...","timestamp":"2026-04-18T18:57:52.478Z"}
+{"level":"info","message":"✅ Routes imported successfully","timestamp":"2026-04-18T18:57:52.479Z"}
+{"level":"info","message":"📂 Path setup complete","timestamp":"2026-04-18T18:57:52.480Z"}
+{"level":"info","message":"✅ Environment variables loaded","timestamp":"2026-04-18T18:57:52.480Z"}
+{"level":"info","message":"🔧 Creating Express app on port 3001...","timestamp":"2026-04-18T18:57:52.499Z"}
+{"level":"info","message":"📝 Setting up middleware...","timestamp":"2026-04-18T18:57:52.500Z"}
+{"level":"info","message":"[email] sendWelcomeEmail sending to angyrendona@hotmail.com","timestamp":"2026-04-18T19:09:13.162Z"}
+{"level":"info","message":"[email] sendWelcomeEmail sending to angyrendona@hotmail.com","timestamp":"2026-04-18T19:09:13.673Z"}
+{"level":"warn","message":"[email] sendWelcomeEmail returned error: You can only send testing emails to your own email address (adm.bionutrexmx@gmail.com). To send emails to other recipients, please verify a domain at resend.com/domains, and change the `from` address to an email using this domain.","timestamp":"2026-04-18T19:09:14.336Z"}
+{"level":"warn","message":"[email] sendWelcomeEmail returned error: You can only send testing emails to your own email address (adm.bionutrexmx@gmail.com). To send emails to other recipients, please verify a domain at resend.com/domains, and change the `from` address to an email using this domain.","timestamp":"2026-04-18T19:09:14.339Z"}
+{"level":"info","message":"[checkout] Triggering order confirmation email for order 14 to angyrendona@hotmail.com","timestamp":"2026-04-18T19:12:22.300Z"}
+{"level":"info","message":"[email] sendOrderConfirmationEmail sending to angyrendona@hotmail.com for order 14","timestamp":"2026-04-18T19:12:22.301Z"}
+{"level":"warn","message":"[email] sendOrderConfirmationEmail returned error: You can only send testing emails to your own email address (adm.bionutrexmx@gmail.com). To send emails to other recipients, please verify a domain at resend.com/domains, and change the `from` address to an email using this domain.","timestamp":"2026-04-18T19:12:22.815Z"}
+{"level":"info","message":"[checkout] Triggering order confirmation email for order 15 to adm.bionutrexmx@gmail.com","timestamp":"2026-04-18T19:14:25.798Z"}
+{"level":"info","message":"[email] sendOrderConfirmationEmail sending to adm.bionutrexmx@gmail.com for order 15","timestamp":"2026-04-18T19:14:25.798Z"}
+{"id":"a92530ad-e3d7-40b9-8655-7b65e4e0bb34","level":"info","message":"[email] sendOrderConfirmationEmail success","timestamp":"2026-04-18T19:14:26.414Z"}
+{"level":"info","message":"[email] Resend client initialized","timestamp":"2026-04-18T20:00:57.658Z"}
+{"level":"info","message":"📦 Starting BioNutrex Backend...","timestamp":"2026-04-18T20:00:57.680Z"}
+{"level":"info","message":"✅ Routes imported successfully","timestamp":"2026-04-18T20:00:57.680Z"}
+{"level":"info","message":"📂 Path setup complete","timestamp":"2026-04-18T20:00:57.681Z"}
+{"level":"info","message":"✅ Environment variables loaded","timestamp":"2026-04-18T20:00:57.681Z"}
+{"level":"info","message":"🔧 Creating Express app on port 3001...","timestamp":"2026-04-18T20:00:57.683Z"}
+{"level":"info","message":"📝 Setting up middleware...","timestamp":"2026-04-18T20:00:57.684Z"}

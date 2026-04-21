@@ -65,10 +65,11 @@ npm run db:seed         # seed inicial
 | `/api/cart`               | `src/routes/cart.js`             |
 | `/api/checkout`           | `src/routes/checkout.js`         |
 | `/api/admin/orders`       | `src/routes/admin-orders.js`     |
+| `/api/users`              | `src/routes/users.js`            |
 
 ### Middleware de autenticación
 - **Admin**: `authMiddleware` en `src/middleware/auth.js` — verifica JWT Supabase y expone `req.admin`
-- **Usuario cliente**: Se debe crear `userAuthMiddleware` separado que resuelva `User` de la tabla `users` por `supabase_uid` o email
+- **Usuario cliente**: `userAuthMiddleware` en `src/middleware/userAuth.js` — verifica JWT Supabase, hace upsert del `User` en BD y expone `req.user`
 
 ### Modelos Prisma (`prisma/schema.prisma`)
 | Modelo            | PK tipo  | Notas clave                                      |
@@ -85,6 +86,7 @@ npm run db:seed         # seed inicial
 | `Slider`          | `cuid`   | Hero sliders del home, con `titleSegments` JSON  |
 | `HomeSection`     | `cuid`   | Secciones CMS del home, clave única `sectionKey` |
 | `BlogPost`        | `cuid`   | `slug` único, `published`, `views`               |
+| `UserAddress`     | `Int`    | FK → `User`; `label`, `address`, `city`, `state`, `zip`, `isDefault` |
 | `TechnicalResource`| `cuid` | Recursos técnicos/PDFs de productos              |
 
 > **Pendiente de agregar**: `WishlistItem` (userId + productId) y `Review` (userId + productId + rating + comment)
@@ -177,31 +179,55 @@ npm run lint
 
 ---
 
-## Implementaciones en progreso
+## Funcionalidades implementadas (completadas)
 
-### 1. Página de Confirmación de Pedido (`/checkout/success`)
-- **Estado actual**: `CheckoutSuccess.tsx` existe pero sólo consume `location.state` (se pierde al refrescar)
-- **Pendiente**: Agregar llamada a `GET /api/checkout/order/:paymentIntentId` para hidratar datos desde la BD si no hay state. Mejorar UX con más detalles del pedido.
+### Auth de clientes
+- `userAuthMiddleware` en `src/middleware/userAuth.js` — verifica JWT Supabase y hace upsert del `User` en la BD
+- Rutas `/api/users/me`, `/api/users/sync`, `/api/users/me/orders`
+- `UserProfile.tsx` — página de perfil con tabs: info personal + direcciones de envío
+- El perfil deshabilita el botón Guardar hasta que el usuario edita algo (`hasChanges` comparando valores actuales vs guardados)
 
-### 2. Wishlist por cliente
-- **Backend**: Agregar modelo `WishlistItem` al schema Prisma + rutas `/api/wishlist` (GET, POST, DELETE)
-- **Frontend**: `WishlistContext`, página `/wishlist`, botón "Agregar a wishlist" en `ProductCard` y `ProductInfo`
-- **Requisito**: Cliente debe estar autenticado (`User`)
+### Direcciones de envío del cliente
+- Modelo `UserAddress` en Prisma con máximo 3 por usuario (validado en backend)
+- CRUD completo: GET, POST, PUT, DELETE `/api/users/me/addresses`
+- PATCH `/api/users/me/addresses/:id/default` — establece dirección predeterminada
+- Auto-asignación de default al eliminar la dirección predeterminada
+- `AddressesSection` + `AddressModal` en `UserProfile.tsx`
 
-### 3. Reseñas de productos
-- **Estado actual**: `ProductReviews.tsx` usa datos mock (`MOCK_REVIEWS`)
-- **Backend**: Agregar modelo `Review` al schema Prisma + rutas `/api/reviews/:productId` (GET público, POST autenticado)
-- **Frontend**: Reemplazar mocks con fetch real; agregar formulario de reseña para usuarios autenticados
-- **Requisito**: Solo usuarios con perfil de cliente pueden escribir reseñas
+### Checkout mejorado
+- Bug fix: `paymentSucceeded = useRef(false)` evita redirect prematuro a `/catalogo` al vaciar carrito
+- Selector de dirección guardada en Checkout — toggle "Dirección guardada / Nueva dirección"
+- Pre-rellena campos de contacto desde el perfil del usuario autenticado
+- Órdenes linked al usuario por email al confirmar pago (aunque el usuario no esté logueado)
+
+### Email transaccional
+- `sendWelcomeEmail` — enviado una sola vez al sincronizar el perfil post-verificación
+- `sendOrderConfirmationEmail` — enviado al confirmar pago exitoso (fire-and-forget)
+- Servicio en `src/services/email.js` via Resend
+
+### Animaciones
+- Navbar mobile menu con Framer Motion: slide (`x: -100% → 0`) + overlay fade + stagger en links
+- DrawerOverlay y sidebars también con Framer Motion (`AnimatePresence`)
+
+### Logger
+- `src/utils/logger.js` — Winston logger con `combined.log` y `error.log`
 
 ---
 
-## Autenticación de clientes (pendiente)
+## Pendiente de implementar
 
-Actualmente la app tiene auth de **admin** (Supabase Auth → `useAuth.ts`) pero no tiene flujo completo de auth para **clientes**. Para Wishlist y Reviews se necesita:
-- Endpoint `POST /api/users/register` y `POST /api/users/login` (o integrar Supabase Auth para clientes también)
-- Hook `useCustomerAuth` o `AuthUserContext` que maneje la sesión del cliente
-- `userAuthMiddleware` en el backend que resuelva el `User` de la tabla `users`
+### 1. Wishlist por cliente
+- **Backend**: Agregar modelo `WishlistItem` al schema Prisma + rutas `/api/wishlist` (GET, POST, DELETE)
+- **Frontend**: `WishlistContext`, página `/wishlist`, botón "Agregar a wishlist" en `ProductCard` y `ProductInfo`
+
+### 2. Reseñas de productos
+- **Estado actual**: `ProductReviews.tsx` usa datos mock (`MOCK_REVIEWS`)
+- **Backend**: Agregar modelo `Review` + rutas `/api/reviews/:productId`
+- **Frontend**: Reemplazar mocks, agregar formulario autenticado
+
+### 3. Página `/checkout/success`
+- Actualmente consume `location.state`; se pierde al refrescar
+- **Pendiente**: `GET /api/checkout/order/:paymentIntentId` para hidratar desde BD
 
 ---
 
@@ -213,3 +239,4 @@ Actualmente la app tiene auth de **admin** (Supabase Auth → `useAuth.ts`) pero
 | `development/senior-security`      | Auth, validación, seguridad de endpoints         |
 | `development/senior-fullstack`     | Arquitectura, patrones, scaffolding              |
 | `development/skill-creator`        | Meta: creación y evaluación de skills            |
+| `overlay-animations`               | Framer Motion — drawers, overlays, mobile menus  |
