@@ -7,6 +7,7 @@ import { homeSectionAPI } from "@/services/api";
 import type { HomeSection } from "@/types";
 import { SectionEditModal } from "@/components/Admin/SectionEditModal";
 import LivePreview from "@/components/Admin/LivePreview";
+import SectionPreview from "@/components/Admin/SectionPreview";
 
 const SECTION_LABELS: Record<string, string> = {
   categories_hero: "Hero",
@@ -307,9 +308,9 @@ export default function CategoriesEditor() {
                           </span>
                         )}
                       </div>
-                      <p className="text-gray-600 text-sm line-clamp-1">
-                        {section.content}
-                      </p>
+                      <div className="text-gray-600 text-sm line-clamp-1">
+                        <SectionPreview section={section} />
+                      </div>
                     </div>
                     <div className="flex items-center gap-2 ml-4">
                       <button

@@ -18,6 +18,7 @@ import { homeSectionAPI, technicalResourceAPI } from "@/services/api";
 import type { HomeSection, TechnicalResource } from "@/types";
 import { SectionEditModal } from "@/components/Admin/SectionEditModal";
 import LivePreview from "@/components/Admin/LivePreview";
+import SectionPreview from "@/components/Admin/SectionPreview";
 
 const BACKEND_URL =
   (import.meta.env.VITE_API_URL as string | undefined)?.replace("/api", "") ||
@@ -442,9 +443,9 @@ export default function ResourcesEditor() {
                               </span>
                             )}
                           </div>
-                          <p className="text-gray-600 text-sm line-clamp-1">
-                            {section.content}
-                          </p>
+                          <div className="text-gray-600 text-sm line-clamp-1">
+                            <SectionPreview section={section} />
+                          </div>
                         </div>
                         <div className="flex items-center gap-2 ml-4">
                           <button

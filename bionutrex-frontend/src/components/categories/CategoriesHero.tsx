@@ -1,6 +1,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import type { HomeSection, TitleSegment } from "@/types";
+import { contentToText } from "@/utils/contentToText";
 
 const BACKEND_URL =
   (import.meta.env.VITE_API_URL as string | undefined)?.replace("/api", "") ||
@@ -113,7 +114,7 @@ export default function CategoriesHero({ section }: { section: HomeSection }) {
         {/* Description */}
         {section.content && (
           <p className="text-slate-300 text-lg lg:text-xl max-w-2xl mb-10 leading-relaxed">
-            {section.content}
+            {contentToText(section.content)}
           </p>
         )}
 

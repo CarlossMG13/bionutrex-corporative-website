@@ -1,1 +1,117 @@
-import { useState, useCallback, useEffect } from 'react';\n\nexport interface LivePreviewState {\n  isOpen: boolean;\n  device: 'mobile' | 'tablet' | 'desktop';\n  currentUrl: string;\n  isFullscreen: boolean;\n  isLoading: boolean;\n  isRefreshing: boolean;\n}\n\nexport function useLivePreview(initialState?: Partial<LivePreviewState>) {\n  const [state, setState] = useState<LivePreviewState>({\n    isOpen: false,\n    device: 'desktop',\n    currentUrl: '/',\n    isFullscreen: false,\n    isLoading: true,\n    isRefreshing: false,\n    ...initialState,\n  });\n\n  const updateState = useCallback((updates: Partial<LivePreviewState>) => {\n    setState(prev => ({ ...prev, ...updates }));\n  }, []);\n\n  const openPreview = useCallback((device?: 'mobile' | 'tablet' | 'desktop', url?: string) => {\n    updateState({\n      isOpen: true,\n      ...(device && { device }),\n      ...(url && { currentUrl: url }),\n      isLoading: true,\n    });\n  }, [updateState]);\n\n  const closePreview = useCallback(() => {\n    updateState({ isOpen: false });\n  }, [updateState]);\n\n  const changeDevice = useCallback((device: 'mobile' | 'tablet' | 'desktop') => {\n    updateState({ device, isLoading: true });\n  }, [updateState]);\n\n  const changeUrl = useCallback((url: string) => {\n    updateState({ currentUrl: url, isLoading: true });\n  }, [updateState]);\n\n  const toggleFullscreen = useCallback(() => {\n    updateState({ isFullscreen: !state.isFullscreen });\n  }, [updateState, state.isFullscreen]);\n\n  const startRefresh = useCallback(() => {\n    updateState({ isRefreshing: true, isLoading: true });\n    // Simular tiempo de refresh\n    setTimeout(() => {\n      updateState({ isRefreshing: false });\n    }, 1000);\n  }, [updateState]);\n\n  const setLoading = useCallback((loading: boolean) => {\n    updateState({ isLoading: loading });\n  }, [updateState]);\n\n  // Keyboard shortcuts handler\n  const handleKeyboard = useCallback((e: KeyboardEvent) => {\n    if (!state.isOpen) return;\n\n    switch (true) {\n      case e.key === 'Escape':\n        closePreview();\n        break;\n      case e.key === 'F5' || (e.ctrlKey && e.key === 'r'):\n        e.preventDefault();\n        startRefresh();\n        break;\n      case e.ctrlKey && ['1', '2', '3'].includes(e.key):\n        e.preventDefault();\n        const devices: ('mobile' | 'tablet' | 'desktop')[] = ['mobile', 'tablet', 'desktop'];\n        changeDevice(devices[parseInt(e.key) - 1]);\n        break;\n      case e.ctrlKey && e.key === 'Enter':\n        e.preventDefault();\n        window.open(state.currentUrl, '_blank');\n        break;\n    }\n  }, [state.isOpen, state.currentUrl, closePreview, startRefresh, changeDevice]);\n\n  // Setup keyboard event listener\n  useEffect(() => {\n    if (state.isOpen) {\n      window.addEventListener('keydown', handleKeyboard);\n      return () => window.removeEventListener('keydown', handleKeyboard);\n    }\n  }, [state.isOpen, handleKeyboard]);\n\n  return {\n    state,\n    actions: {\n      openPreview,\n      closePreview,\n      changeDevice,\n      changeUrl,\n      toggleFullscreen,\n      startRefresh,\n      setLoading,\n    },\n    // Quick access to commonly used state\n    isOpen: state.isOpen,\n    device: state.device,\n    currentUrl: state.currentUrl,\n    isFullscreen: state.isFullscreen,\n    isLoading: state.isLoading,\n    isRefreshing: state.isRefreshing,\n  };\n}\n\nexport default useLivePreview;"
+import { useState, useCallback, useEffect } from 'react';
+
+export interface LivePreviewState {
+  isOpen: boolean;
+  device: 'mobile' | 'tablet' | 'desktop';
+  currentUrl: string;
+  isFullscreen: boolean;
+  isLoading: boolean;
+  isRefreshing: boolean;
+}
+
+export function useLivePreview(initialState?: Partial<LivePreviewState>) {
+  const [state, setState] = useState<LivePreviewState>({
+    isOpen: false,
+    device: 'desktop',
+    currentUrl: '/',
+    isFullscreen: false,
+    isLoading: true,
+    isRefreshing: false,
+    ...initialState,
+  });
+
+  const updateState = useCallback((updates: Partial<LivePreviewState>) => {
+    setState(prev => ({ ...prev, ...updates }));
+  }, []);
+
+  const openPreview = useCallback((device?: 'mobile' | 'tablet' | 'desktop', url?: string) => {
+    updateState({
+      isOpen: true,
+      ...(device && { device }),
+      ...(url && { currentUrl: url }),
+      isLoading: true,
+    });
+  }, [updateState]);
+
+  const closePreview = useCallback(() => {
+    updateState({ isOpen: false });
+  }, [updateState]);
+
+  const changeDevice = useCallback((device: 'mobile' | 'tablet' | 'desktop') => {
+    updateState({ device, isLoading: true });
+  }, [updateState]);
+
+  const changeUrl = useCallback((url: string) => {
+    updateState({ currentUrl: url, isLoading: true });
+  }, [updateState]);
+
+  const toggleFullscreen = useCallback(() => {
+    updateState({ isFullscreen: !state.isFullscreen });
+  }, [updateState, state.isFullscreen]);
+
+  const startRefresh = useCallback(() => {
+    updateState({ isRefreshing: true, isLoading: true });
+    // Simular tiempo de refresh
+    setTimeout(() => {
+      updateState({ isRefreshing: false });
+    }, 1000);
+  }, [updateState]);
+
+  const setLoading = useCallback((loading: boolean) => {
+    updateState({ isLoading: loading });
+  }, [updateState]);
+
+  // Keyboard shortcuts handler
+  const handleKeyboard = useCallback((e: KeyboardEvent) => {
+    if (!state.isOpen) return;
+
+    switch (true) {
+      case e.key === 'Escape':
+        closePreview();
+        break;
+      case e.key === 'F5' || (e.ctrlKey && e.key === 'r'):
+        e.preventDefault();
+        startRefresh();
+        break;
+      case e.ctrlKey && ['1', '2', '3'].includes(e.key):
+        e.preventDefault();
+        const devices: ('mobile' | 'tablet' | 'desktop')[] = ['mobile', 'tablet', 'desktop'];
+        changeDevice(devices[parseInt(e.key) - 1]);
+        break;
+      case e.ctrlKey && e.key === 'Enter':
+        e.preventDefault();
+        window.open(state.currentUrl, '_blank');
+        break;
+    }
+  }, [state.isOpen, state.currentUrl, closePreview, startRefresh, changeDevice]);
+
+  // Setup keyboard event listener
+  useEffect(() => {
+    if (state.isOpen) {
+      window.addEventListener('keydown', handleKeyboard);
+      return () => window.removeEventListener('keydown', handleKeyboard);
+    }
+  }, [state.isOpen, handleKeyboard]);
+
+  return {
+    state,
+    actions: {
+      openPreview,
+      closePreview,
+      changeDevice,
+      changeUrl,
+      toggleFullscreen,
+      startRefresh,
+      setLoading,
+    },
+    // Quick access to commonly used state
+    isOpen: state.isOpen,
+    device: state.device,
+    currentUrl: state.currentUrl,
+    isFullscreen: state.isFullscreen,
+    isLoading: state.isLoading,
+    isRefreshing: state.isRefreshing,
+  };
+}
+
+export default useLivePreview;

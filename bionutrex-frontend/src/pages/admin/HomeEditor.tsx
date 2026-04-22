@@ -18,6 +18,7 @@ import { homeSectionAPI, sliderAPI, productAPI } from "@/services/api";
 import type { HomeSection, Slider, Product } from "@/types";
 import { SectionEditModal } from "@/components/Admin/SectionEditModal";
 import LivePreview from "@/components/Admin/LivePreview";
+import SectionPreview from "@/components/Admin/SectionPreview";
 import SliderEditModal from "@/components/Admin/SliderEditModal";
 
 export default function HomeEditor() {
@@ -899,9 +900,9 @@ export default function HomeEditor() {
                             }[section.sectionKey] ?? section.sectionKey}
                           </span>
                         </div>
-                        <p className="text-gray-600 text-sm">
-                          {section.content}
-                        </p>
+                        <div className="text-gray-600 text-sm">
+                          <SectionPreview section={section} />
+                        </div>
                         {section.subtitle && (
                           <p className="text-gray-500 text-xs mt-1">
                             {section.subtitle}

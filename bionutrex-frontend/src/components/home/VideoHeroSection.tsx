@@ -2,6 +2,7 @@ import React, { useRef } from "react";
 import { Link } from "react-router-dom";
 import { useHomeSections } from "@/contexts/HomeDataContext";
 import type { TitleSegment } from "@/types";
+import { contentToText } from "@/utils/contentToText";
 
 const BACKEND_URL =
   (import.meta.env.VITE_API_URL as string | undefined)?.replace("/api", "") ||
@@ -117,8 +118,8 @@ export default function VideoHeroSection() {
           {/* Description */}
           {section.content && (
             <p className="text-white/70 text-lg md:text-xl font-medium leading-relaxed max-w-xl">
-              {section.content}
-            </p>
+                {contentToText(section.content)}
+              </p>
           )}
 
           {/* CTA */}

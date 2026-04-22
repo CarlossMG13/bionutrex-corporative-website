@@ -1,5 +1,6 @@
 import React from "react";
 import type { HomeSection, TitleSegment } from "@/types";
+import { contentToText } from "@/utils/contentToText";
 
 const BACKEND_URL =
   (import.meta.env.VITE_API_URL as string | undefined)?.replace("/api", "") ||
@@ -64,7 +65,7 @@ export default function ResourcesCTA({ section }: { section: HomeSection }) {
           </h3>
           {section.content && (
             <p className="text-slate-200 text-lg mb-10 max-w-xl leading-relaxed">
-              {section.content}
+              {contentToText(section.content)}
             </p>
           )}
           <div className="flex flex-wrap gap-6">

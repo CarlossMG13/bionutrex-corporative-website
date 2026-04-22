@@ -1,6 +1,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import type { HomeSection, TitleSegment } from "@/types";
+import { contentToText } from "@/utils/contentToText";
 
 function parseSegments(
   raw: string | undefined,
@@ -51,7 +52,7 @@ export default function ProductsCTA({ section }: Props) {
 
           {/* Description */}
           {section.content && (
-            <p className="text-slate-400 text-lg">{section.content}</p>
+            <p className="text-slate-400 text-lg">{contentToText(section.content, 300)}</p>
           )}
 
           {/* Buttons */}

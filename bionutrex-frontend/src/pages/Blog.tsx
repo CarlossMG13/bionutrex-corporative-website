@@ -1,1 +1,162 @@
-import { useState, useEffect } from 'react';\nimport { Link } from 'react-router-dom';\nimport { Calendar, User, Eye } from 'lucide-react';\nimport { blogPostAPI } from '@/services/api';\nimport type { BlogPost } from '@/types';\nimport Loading from '@/components/shared/Loading';\n\nexport default function Blog() {\n  const [posts, setPosts] = useState<BlogPost[]>([]);\n  const [loading, setLoading] = useState(true);\n  const [error, setError] = useState<string | null>(null);\n\n  useEffect(() => {\n    loadPosts();\n  }, []);\n\n  const loadPosts = async () => {\n    try {\n      setLoading(true);\n      const response = await blogPostAPI.getAll();\n      setPosts(response.data);\n      setError(null);\n    } catch (err) {\n      console.error('Error loading blog posts:', err);\n      setError('Error al cargar los artículos del blog');\n      // Posts de ejemplo como fallback\n      setPosts([\n        {\n          id: '1',\n          title: 'Bienvenidos a BioNutrex',\n          slug: 'bienvenidos-bionutrex',\n          excerpt: 'Conoce más sobre nuestra misión y visión en el mundo de la biotecnología nutricional.',\n          content: '',\n          imageUrl: '/uploads/blog-default.jpg',\n          author: 'Equipo BioNutrex',\n          published: true,\n          views: 0,\n          createdAt: new Date().toISOString(),\n          updatedAt: new Date().toISOString(),\n          publishedAt: new Date().toISOString()\n        }\n      ]);\n    } finally {\n      setLoading(false);\n    }\n  };\n\n  const formatDate = (dateString: string) => {\n    return new Date(dateString).toLocaleDateString('es-ES', {\n      year: 'numeric',\n      month: 'long',\n      day: 'numeric'\n    });\n  };\n\n  if (loading) {\n    return <Loading />;\n  }\n\n  return (\n    <div className=\"min-h-screen bg-gray-50\">\n      {/* Header */}\n      <div className=\"bg-white border-b border-gray-200\">\n        <div className=\"max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16\">\n          <div className=\"text-center\">\n            <h1 className=\"playfair text-4xl md:text-5xl lg:text-6xl font-bold text-[#0d40a5] mb-4\">\n              Blog BioNutrex\n            </h1>\n            <p className=\"raleway text-lg text-gray-600 max-w-3xl mx-auto\">\n              Descubre las últimas investigaciones, novedades y artículos científicos \n              en el fascinante mundo de la biotecnología nutricional.\n            </p>\n          </div>\n        </div>\n      </div>\n\n      {/* Content */}\n      <div className=\"max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12\">\n        {error && (\n          <div className=\"bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-8\">\n            <div className=\"flex\">\n              <div className=\"ml-3\">\n                <h3 className=\"text-sm font-medium text-yellow-800\">\n                  Modo sin conexión\n                </h3>\n                <div className=\"mt-2 text-sm text-yellow-700\">\n                  <p>{error}. Mostrando contenido de ejemplo.</p>\n                </div>\n              </div>\n            </div>\n          </div>\n        )}\n\n        {posts.length > 0 ? (\n          <div className=\"grid gap-8 lg:grid-cols-2 xl:grid-cols-3\">\n            {posts.map((post) => (\n              <article\n                key={post.id}\n                className=\"bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 overflow-hidden\"\n              >\n                <div className=\"aspect-video bg-gray-200 relative overflow-hidden\">\n                  <img\n                    src={post.imageUrl}\n                    alt={post.title}\n                    className=\"w-full h-full object-cover hover:scale-105 transition-transform duration-300\"\n                  />\n                </div>\n                \n                <div className=\"p-6\">\n                  <h2 className=\"playfair text-xl font-bold text-gray-900 mb-3 line-clamp-2\">\n                    <Link \n                      to={`/blog/${post.slug}`}\n                      className=\"hover:text-[#0d40a5] transition-colors\"\n                    >\n                      {post.title}\n                    </Link>\n                  </h2>\n                  \n                  <p className=\"raleway text-gray-600 text-sm mb-4 line-clamp-3\">\n                    {post.excerpt}\n                  </p>\n                  \n                  <div className=\"raleway flex items-center justify-between text-xs text-gray-500 mb-4\">\n                    <div className=\"flex items-center gap-4\">\n                      <span className=\"flex items-center gap-1\">\n                        <User className=\"w-3 h-3\" />\n                        {post.author}\n                      </span>\n                      \n                      <span className=\"flex items-center gap-1\">\n                        <Calendar className=\"w-3 h-3\" />\n                        {formatDate(post.publishedAt || post.createdAt)}\n                      </span>\n                      \n                      <span className=\"flex items-center gap-1\">\n                        <Eye className=\"w-3 h-3\" />\n                        {post.views}\n                      </span>\n                    </div>\n                  </div>\n                  \n                  <Link\n                    to={`/blog/${post.slug}`}\n                    className=\"raleway inline-flex items-center text-[#0d40a5] hover:text-[#0d40a5]/80 font-medium text-sm transition-colors\"\n                  >\n                    Leer más\n                    <svg className=\"w-4 h-4 ml-1\" fill=\"none\" stroke=\"currentColor\" viewBox=\"0 0 24 24\">\n                      <path strokeLinecap=\"round\" strokeLinejoin=\"round\" strokeWidth={2} d=\"M9 5l7 7-7 7\" />\n                    </svg>\n                  </Link>\n                </div>\n              </article>\n            ))}\n          </div>\n        ) : (\n          <div className=\"text-center py-16\">\n            <div className=\"text-gray-400 text-6xl mb-4\">📝</div>\n            <h3 className=\"playfair text-2xl font-bold text-gray-900 mb-2\">\n              No hay artículos publicados\n            </h3>\n            <p className=\"raleway text-gray-600 mb-8\">\n              Pronto compartiremos contenido fascinante sobre biotecnología nutricional.\n            </p>\n            <Link\n              to=\"/\"\n              className=\"raleway inline-flex items-center px-6 py-3 bg-[#0d40a5] text-white font-medium rounded-lg hover:bg-[#0d40a5]/90 transition-colors\"\n            >\n              Volver al inicio\n            </Link>\n          </div>\n        )}\n      </div>\n    </div>\n  );\n}
+import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
+import { Calendar, User, Eye } from 'lucide-react';
+import { blogPostAPI } from '@/services/api';
+import type { BlogPost } from '@/types';
+import Loading from '@/components/shared/Loading';
+
+export default function Blog() {
+  const [posts, setPosts] = useState<BlogPost[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    loadPosts();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const loadPosts = async () => {
+    try {
+      setLoading(true);
+      const response = await blogPostAPI.getAll();
+      setPosts(response.data);
+      setError(null);
+    } catch (err) {
+      console.error('Error loading blog posts:', err);
+      setError('Error al cargar los artículos del blog');
+      // Fallback: sample post
+      setPosts([
+        {
+          id: '1',
+          title: 'Bienvenidos a BioNutrex',
+          slug: 'bienvenidos-bionutrex',
+          excerpt:
+            'Conoce más sobre nuestra misión y visión en el mundo de la biotecnología nutricional.',
+          content: '',
+          imageUrl: '/uploads/blog-default.jpg',
+          author: 'Equipo BioNutrex',
+          published: true,
+          views: 0,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          publishedAt: new Date().toISOString(),
+        } as unknown as BlogPost,
+      ]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const formatDate = (dateString?: string) => {
+    if (!dateString) return '';
+    return new Date(dateString).toLocaleDateString('es-ES', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    });
+  };
+
+  if (loading) return <Loading />;
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <div className="bg-white border-b border-gray-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+          <div className="text-center">
+            <h1 className="playfair text-4xl md:text-5xl lg:text-6xl font-bold text-[#0d40a5] mb-4">
+              Blog BioNutrex
+            </h1>
+            <p className="raleway text-lg text-gray-600 max-w-3xl mx-auto">
+              Descubre las últimas investigaciones, novedades y artículos científicos en
+              el fascinante mundo de la biotecnología nutricional.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Content */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        {error && (
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-8">
+            <div className="flex">
+              <div className="ml-3">
+                <h3 className="text-sm font-medium text-yellow-800">Modo sin conexión</h3>
+                <div className="mt-2 text-sm text-yellow-700">
+                  <p>{error}. Mostrando contenido de ejemplo.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {posts.length > 0 ? (
+          <div className="grid gap-8 lg:grid-cols-2 xl:grid-cols-3">
+            {posts.map((post) => (
+              <article
+                key={post.id}
+                className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 overflow-hidden"
+              >
+                <div className="aspect-video bg-gray-200 relative overflow-hidden">
+                  <img
+                    src={post.imageUrl}
+                    alt={post.title}
+                    className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+                  />
+                </div>
+
+                <div className="p-6">
+                  <h2 className="playfair text-xl font-bold text-gray-900 mb-3 line-clamp-2">
+                    <Link to={`/blog/${post.slug}`} className="hover:text-[#0d40a5] transition-colors">
+                      {post.title}
+                    </Link>
+                  </h2>
+
+                  <p className="raleway text-gray-600 text-sm mb-4 line-clamp-3">{post.excerpt}</p>
+
+                  <div className="raleway flex items-center justify-between text-xs text-gray-500 mb-4">
+                    <div className="flex items-center gap-4">
+                      <span className="flex items-center gap-1">
+                        <User className="w-3 h-3" />
+                        {post.author}
+                      </span>
+
+                      <span className="flex items-center gap-1">
+                        <Calendar className="w-3 h-3" />
+                        {formatDate(post.publishedAt || post.createdAt)}
+                      </span>
+
+                      <span className="flex items-center gap-1">
+                        <Eye className="w-3 h-3" />
+                        {post.views}
+                      </span>
+                    </div>
+                  </div>
+
+                  <Link
+                    to={`/blog/${post.slug}`}
+                    className="raleway inline-flex items-center text-[#0d40a5] hover:text-[#0d40a5]/80 font-medium text-sm transition-colors"
+                  >
+                    Leer más
+                    <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </Link>
+                </div>
+              </article>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-16">
+            <div className="text-gray-400 text-6xl mb-4">📝</div>
+            <h3 className="playfair text-2xl font-bold text-gray-900 mb-2">No hay artículos publicados</h3>
+            <p className="raleway text-gray-600 mb-8">Pronto compartiremos contenido fascinante sobre biotecnología nutricional.</p>
+            <Link to="/" className="raleway inline-flex items-center px-6 py-3 bg-[#0d40a5] text-white font-medium rounded-lg hover:bg-[#0d40a5]/90 transition-colors">
+              Volver al inicio
+            </Link>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}

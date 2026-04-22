@@ -1,5 +1,6 @@
 import React from "react";
 import type { HomeSection, TitleSegment } from "@/types";
+import { contentToText } from "@/utils/contentToText";
 
 const BACKEND_URL =
   (import.meta.env.VITE_API_URL as string | undefined)?.replace("/api", "") ||
@@ -97,7 +98,7 @@ export default function ResourcesHero({ section, searchProps }: Props) {
 
         {section.content && (
           <p className="text-slate-300 text-lg mb-10 max-w-2xl leading-relaxed">
-            {section.content}
+            {contentToText(section.content)}
           </p>
         )}
 

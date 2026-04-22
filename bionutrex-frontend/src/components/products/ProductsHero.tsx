@@ -1,6 +1,7 @@
 import React, { useRef } from "react";
 import { Link } from "react-router-dom";
 import type { TitleSegment } from "@/types";
+import { contentToText } from "@/utils/contentToText";
 
 const BACKEND_URL =
   (import.meta.env.VITE_API_URL as string | undefined)?.replace("/api", "") ||
@@ -123,7 +124,7 @@ export default function ProductsHero({ section }: Props) {
         {/* Description */}
         {section.content && (
           <p className="text-slate-300 text-lg md:text-xl font-light leading-relaxed max-w-2xl mx-auto mb-10">
-            {section.content}
+            {contentToText(section.content)}
           </p>
         )}
 
